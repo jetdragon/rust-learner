@@ -1,0 +1,6 @@
+[package]
+name = "module-02-ownership"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

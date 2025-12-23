@@ -1,5 +1,5 @@
 [package]
-name = "01-基础入门"
+name = "module-01-basics"
 version.workspace = true
 edition.workspace = true
 

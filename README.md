@@ -14,16 +14,16 @@
 ## 学习路径
 
 ```
-01-基础入门    → 变量、数据类型、函数
-02-所有权系统  → Rust 核心概念
-03-结构体与枚举 → 自定义数据类型
-04-模式匹配    → 强大的控制流工具
-05-错误处理    → Result 和 Option
-06-集合类型    → Vec、HashMap 等
-07-泛型与Trait → 代码抽象
-08-生命周期    → 引用的有效性
-09-并发编程    → 线程与消息传递
-10-实战项目    → 综合应用
+module-01-basics    → 变量、数据类型、函数
+module-02-ownership  → Rust 核心概念
+module-03-structs-enums → 自定义数据类型
+module-04-patterns   → 强大的控制流工具
+module-05-error-handling → Result 和 Option
+module-06-collections → Vec、HashMap 等
+module-07-generics   → 代码抽象
+module-08-lifetimes  → 引用的有效性
+module-09-concurrency → 线程与消息传递
+module-10-project    → 综合应用
 ```
 
 ## 快速开始
@@ -40,14 +40,14 @@
 cargo build
 
 # 构建特定模块
-cargo build -p 基础入门
+cargo build -p module-01-basics
 ```
 
 ### 运行示例
 
 ```bash
 # 运行某个示例
-cargo run -p 基础入门 --bin variables
+cargo run -p module-01-basics --bin variables
 ```
 
 ### 运行测试
@@ -57,7 +57,7 @@ cargo run -p 基础入门 --bin variables
 cargo test
 
 # 运行特定模块的测试
-cargo test -p 基础入门
+cargo test -p module-01-basics
 ```
 
 ## 学习进度

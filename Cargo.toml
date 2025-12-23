@@ -1,15 +1,15 @@
 [workspace]
 members = [
-    "01-基础入门",
-    "02-所有权系统",
-    "03-结构体与枚举",
-    "04-模式匹配",
-    "05-错误处理",
-    "06-集合类型",
-    "07-泛型与Trait",
-    "08-生命周期",
-    "09-并发编程",
-    "10-实战项目",
+    "module-01-basics",
+    "module-02-ownership",
+    "module-03-structs-enums",
+    "module-04-patterns",
+    "module-05-error-handling",
+    "module-06-collections",
+    "module-07-generics",
+    "module-08-lifetimes",
+    "module-09-concurrency",
+    "module-10-project",
 ]
 resolver = "2"
 

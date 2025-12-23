@@ -1,0 +1,6 @@
+[package]
+name = "module-06-collections"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

@@ -1,0 +1,6 @@
+[package]
+name = "module-08-lifetimes"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

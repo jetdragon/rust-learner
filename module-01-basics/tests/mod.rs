@@ -43,17 +43,17 @@ fn test_average() {
 #[test]
 fn test_distance() {
     // 测试原点
-    let point = (0.0, 0.0, 0.0);
+    let point: (f64, f64, f64) = (0.0, 0.0, 0.0);
     let distance = (point.0.powi(2) + point.1.powi(2) + point.2.powi(2)).sqrt();
     assert_eq!(distance, 0.0);
 
     // 测试单位点
-    let point = (1.0, 0.0, 0.0);
+    let point: (f64, f64, f64) = (1.0, 0.0, 0.0);
     let distance = (point.0.powi(2) + point.1.powi(2) + point.2.powi(2)).sqrt();
     assert_eq!(distance, 1.0);
 
     // 测试 3-4-5 三角形
-    let point = (3.0, 4.0, 0.0);
+    let point: (f64, f64, f64) = (3.0, 4.0, 0.0);
     let distance = (point.0.powi(2) + point.1.powi(2) + point.2.powi(2)).sqrt();
     assert_eq!(distance, 5.0);
 }

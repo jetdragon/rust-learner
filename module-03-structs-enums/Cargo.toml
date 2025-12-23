@@ -1,0 +1,6 @@
+[package]
+name = "module-03-structs-enums"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

@@ -188,10 +188,10 @@ fn foo() {}
 
 ```bash
 # 编译并运行特定示例
-cargo run -p 01-基础入门 --bin variables
+cargo run -p module-01-basics --bin variables
 
 # 或者先编译
-cargo build -p 01-基础入门
+cargo build -p module-01-basics
 ./target/debug/variables
 ```
 
@@ -237,4 +237,4 @@ A: 单元类型类似其他语言的 `void`，表示"没有有意义的返回值
 
 完成本模块后，继续学习：
 
-- [02-所有权系统](../02-所有权系统/) - Rust 最核心的概念
+- [module-02-ownership](../module-02-ownership/) - Rust 最核心的概念

@@ -1,0 +1,6 @@
+[package]
+name = "module-09-concurrency"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

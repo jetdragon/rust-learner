@@ -1,0 +1,6 @@
+[package]
+name = "module-04-patterns"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
