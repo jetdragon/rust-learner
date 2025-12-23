@@ -1,0 +1,18 @@
+[package]
+name = "01-基础入门"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[[bin]]
+name = "variables"
+path = "examples/variables.rs"
+
+[[bin]]
+name = "data_types"
+path = "examples/data_types.rs"
+
+[[bin]]
+name = "functions"
+path = "examples/functions.rs"
