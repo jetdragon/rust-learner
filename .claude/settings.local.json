@@ -4,7 +4,9 @@
       "Bash(mkdir:*)",
       "Bash(openspec validate:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\n初始化项目：添加 OpenSpec 变更提案\n\n- 创建中文 Rust 学习路径提案\n- 定义学习路径和模块结构规格\n- 添加包含 Git 提交节点的实现任务清单\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\n初始化项目：添加 OpenSpec 变更提案\n\n- 创建中文 Rust 学习路径提案\n- 定义学习路径和模块结构规格\n- 添加包含 Git 提交节点的实现任务清单\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cargo new:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\n初始化 Cargo 工作空间配置\n\n- 添加工作空间 Cargo.toml 配置\n- 创建 .gitignore 忽略 Rust 构建产物\n- 添加 rustfmt.toml 代码格式配置\n- 创建项目根 README.md\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
