@@ -64,6 +64,44 @@ cargo test -p module-01-basics
 
 查看 [进度.md](进度.md) 追踪你的学习进展。
 
+## 🤖 学习伴侣
+
+本项目附带一个 **学习伴侣 CLI 工具**，帮助你：
+
+- 📊 **可视化进度** - 带进度条的仪表板
+- 📝 **智能练习** - 自动生成练习题并判分
+- ⏰ **学习提醒** - 系统通知定时提醒
+- 🏆 **成就系统** - 保持学习动力
+- 💾 **数据追踪** - 持久化学习记录
+
+### 安装学习伴侣
+
+```bash
+cd learning-companion
+cargo build --release
+```
+
+### 使用学习伴侣
+
+```bash
+# 查看学习仪表板
+cargo run --release -- dashboard
+
+# 更新学习进度
+cargo run --release -- update -m module-01-basics -t concept
+
+# 开始练习测试
+cargo run --release -- practice -m module-01-basics -c 5
+
+# 设置学习提醒（每天 20:00）
+cargo run --release -- remind -H 20 -M 0
+
+# 查看成就
+cargo run --release -- achievements
+```
+
+详细文档请查看 [learning-companion/README.md](learning-companion/README.md)。
+
 ## 贡献指南
 
 欢迎贡献新的学习内容！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
