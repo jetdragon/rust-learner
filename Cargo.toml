@@ -11,6 +11,9 @@ members = [
     "module-09-concurrency",
     "module-10-project",
 ]
+exclude = [
+    "learning-companion",
+]
 resolver = "2"
 
 [workspace.package]
