@@ -44,7 +44,7 @@ fn main() {
     println!("6. 语句 vs 表达式");
     let y = {
         let x = 3;
-        x + 1  // 这是表达式，没有分号
+        x + 1 // 这是表达式，没有分号
     };
     println!("块表达式的结果: y = {}", y);
     println!();
@@ -79,11 +79,11 @@ fn greet_name(name: &str) {
 
 // 带返回值的函数
 fn add(x: i32, y: i32) -> i32 {
-    x + y  // 表达式作为返回值（无分号）
+    x + y // 表达式作为返回值（无分号）
 }
 
 fn multiply(x: i32, y: i32) -> i32 {
-    return x * y;  // 使用 return 关键字
+    return x * y; // 使用 return 关键字
 }
 
 // 直接返回字面值
@@ -107,8 +107,8 @@ fn rectangle(width: f64, height: f64) -> (f64, f64) {
 fn find_first_even(numbers: &[i32]) -> Option<i32> {
     for &number in numbers {
         if number % 2 == 0 {
-            return Some(number);  // 找到偶数，提前返回
+            return Some(number); // 找到偶数，提前返回
         }
     }
-    None  // 没有找到
+    None // 没有找到
 }
