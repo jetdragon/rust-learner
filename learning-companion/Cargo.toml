@@ -24,3 +24,7 @@ rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
 notify-rust = "4.11"
 # 随机数
 rand = "0.8"
+# 错误处理
+anyhow = "1.0"
+# 目录路径
+dirs = "5.0"

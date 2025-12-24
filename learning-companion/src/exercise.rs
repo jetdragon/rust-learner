@@ -4,7 +4,7 @@
 
 use crate::repo::LearningRepo;
 use anyhow::Result;
-use rand::Rng;
+use rand::seq::SliceRandom;
 
 /// 练习题目
 #[derive(Debug, Clone)]
@@ -49,7 +49,7 @@ impl PracticeSession {
             .zip(self.questions.iter())
             .filter(|(answer, q)| {
                 // 简化处理：假设答案索引对应正确选项
-                *answer == q.correct_answer.parse().unwrap_or(0)
+                *answer == &q.correct_answer.parse().unwrap_or(0)
             })
             .count();
 
@@ -201,7 +201,7 @@ pub fn generate_basics_questions(count: usize) -> Vec<Question> {
 }
 
 /// 运行练习测试
-pub fn run_practice(repo: &LearningRepo, module_id: &str, count: usize) -> Result<()> {
+pub fn run_practice(_repo: &LearningRepo, module_id: &str, count: usize) -> Result<()> {
     println!("\n╔════════════════════════════════════════╗");
     println!("║        📝 Rust 学习伴侣 - 练习测试      ║");
     println!("╚════════════════════════════════════════╝\n");

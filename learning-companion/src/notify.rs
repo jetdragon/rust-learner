@@ -3,9 +3,10 @@
 //! 系统通知和定时提醒
 
 use anyhow::Result;
-use notify_rust::{Notification, Urgency};
+use notify_rust::Notification;
 use std::thread;
 use std::time::Duration;
+use chrono::{Local, Timelike};
 
 /// 设置提醒
 pub fn set_reminder(hour: u8, minute: u8) -> Result<()> {
@@ -55,7 +56,6 @@ fn send_learning_reminder() -> Result<()> {
     Notification::new()
         .summary("Rust 学习伴侣")
         .body(messages[index])
-        .urgency(Urgency::Normal)
         .show()?;
 
     Ok(())
@@ -66,7 +66,6 @@ pub fn send_achievement_notification(achievement_name: &str) -> Result<()> {
     Notification::new()
         .summary("🏆 成就解锁！")
         .body(&format!("恭喜你解锁成就：{}", achievement_name))
-        .urgency(Urgency::High)
         .show()?;
 
     Ok(())

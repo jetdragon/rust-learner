@@ -5,6 +5,7 @@
 use crate::repo::LearningRepo;
 use anyhow::Result;
 use crate::db;
+use rand::Rng;
 
 /// 显示仪表板
 pub fn show_dashboard(path: &str) -> Result<()> {
@@ -134,7 +135,7 @@ pub fn show_achievements() -> Result<()> {
         return Ok(());
     }
 
-    for achievement in achievements {
+    for achievement in &achievements {
         let icon = match achievement.achievement_type.as_str() {
             "first_module" => "🎓",
             "streak_7" => "🔥",

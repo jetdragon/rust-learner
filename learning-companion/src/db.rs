@@ -2,8 +2,8 @@
 //!
 //! 使用 SQLite 存储学习记录和统计数据
 
-use rusqlite::{Connection, Result as SqlResult};
-use chrono::{DateTime, Local, NaiveDate};
+use rusqlite::{Connection, OptionalExtension};
+use chrono::{Local, NaiveDate};
 use anyhow::Result;
 use std::path::PathBuf;
 
@@ -120,7 +120,7 @@ pub fn update_module_progress(
          ON CONFLICT(module_id) DO UPDATE SET
          mastery_score = ?2,
          last_updated = ?3",
-        [module_id, mastery_score.to_string(), now],
+        [module_id, &mastery_score.to_string(), &now],
     )?;
 
     Ok(())
@@ -143,11 +143,11 @@ pub fn record_practice_result(
          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         [
             module_id,
-            timestamp,
-            questions_total.to_string(),
-            questions_correct.to_string(),
-            score.to_string(),
-            topics,
+            &timestamp,
+            &questions_total.to_string(),
+            &questions_correct.to_string(),
+            &score.to_string(),
+            &topics,
         ],
     )?;
 
@@ -173,7 +173,7 @@ pub fn check_and_unlock_achievement(achievement_type: &str) -> Result<bool> {
     let now = Local::now().to_rfc3339();
     conn.execute(
         "INSERT INTO achievements (achievement_type, unlocked_at) VALUES (?1, ?2)",
-        [achievement_type, now],
+        [achievement_type, &now],
     )?;
 
     Ok(true)
