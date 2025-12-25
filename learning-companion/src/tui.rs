@@ -26,7 +26,7 @@ use crate::repo::{LearningRepo, ModuleProgress};
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
     MainMenu,
-    Dashboard,
+    Dashboard { selected_module: usize },
     UpdateProgress { selected_module: usize, selected_task: usize, focus_area: FocusArea },
     Practice { selected_module: usize, question_count: usize, focus_field: PracticeField },
     Achievements,
@@ -118,7 +118,7 @@ impl App {
     pub fn handle_key(&mut self, key: KeyCode) -> Result<()> {
         match self.state {
             AppState::MainMenu => self.handle_main_menu_key(key),
-            AppState::Dashboard => self.handle_dashboard_key(key),
+            AppState::Dashboard { .. } => self.handle_dashboard_key(key),
             AppState::UpdateProgress { .. } => self.handle_update_progress_key(key),
             AppState::Practice { .. } => self.handle_practice_key(key),
             AppState::Achievements => self.handle_achievements_key(key),
@@ -158,7 +158,7 @@ impl App {
         match self.main_menu_selected {
             0 => {
                 self.ensure_repo()?;
-                self.push_state(AppState::Dashboard);
+                self.push_state(AppState::Dashboard { selected_module: 0 });
             }
             1 => {
                 self.ensure_repo()?;
@@ -197,11 +197,49 @@ impl App {
 
     /// 仪表板按键处理
     fn handle_dashboard_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
+        if let AppState::Dashboard { ref mut selected_module } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.pop_state();
+                }
+                KeyCode::Up => {
+                    if *selected_module > 0 {
+                        *selected_module -= 1;
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(repo) = &self.repo {
+                        if *selected_module < repo.modules.len().saturating_sub(1) {
+                            *selected_module += 1;
+                        }
+                    }
+                }
+                KeyCode::Enter | KeyCode::Char('u') | KeyCode::Char('U') => {
+                    // 进入更新进度界面，选中的模块
+                    let module = *selected_module;
+                    self.state = AppState::UpdateProgress {
+                        selected_module: module,
+                        selected_task: 0,
+                        focus_area: FocusArea::ModuleList,
+                    };
+                    self.update_help_text();
+                }
+                KeyCode::Char('p') | KeyCode::Char('P') => {
+                    // 进入练习界面
+                    let module = *selected_module;
+                    self.state = AppState::Practice {
+                        selected_module: module,
+                        question_count: 5,
+                        focus_field: PracticeField::Module,
+                    };
+                    self.update_help_text();
+                }
+                KeyCode::Char('a') | KeyCode::Char('A') => {
+                    // 查看成就
+                    self.push_state(AppState::Achievements);
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
@@ -406,9 +444,9 @@ impl App {
     fn update_help_text(&mut self) {
         self.help_text = match self.state {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
-            AppState::Dashboard => "Esc 返回 | q 退出".to_string(),
-            AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
-            AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回".to_string(),
+            AppState::Dashboard { .. } => "↑↓ 选择模块 | Enter 更新进度 | U 更新 | P 练习 | Esc 返回".to_string(),
+            AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回仪表板".to_string(),
+            AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回仪表板".to_string(),
             AppState::Achievements => "Esc 返回".to_string(),
             AppState::RemindSetup { .. } => "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
             AppState::Export => "Enter 导出 | Esc 返回".to_string(),
@@ -487,7 +525,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     // 绘制主内容区
     match &app.state {
         AppState::MainMenu => draw_main_menu(f, chunks[1], app),
-        AppState::Dashboard => draw_dashboard(f, chunks[1], app),
+        AppState::Dashboard { .. } => draw_dashboard(f, chunks[1], app),
         AppState::UpdateProgress { selected_module, selected_task, focus_area } => {
             draw_update_progress(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
         }
@@ -586,18 +624,26 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         let completed = repo.progress.iter().filter(|p| p.status == "[x]").count();
         let total = repo.modules.len();
 
+        // 获取当前选中的模块索引
+        let selected_module = if let AppState::Dashboard { selected_module } = app.state {
+            selected_module
+        } else {
+            0
+        };
+
         // 创建垂直布局
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(8), Constraint::Min(0)].as_ref())
+            .constraints([Constraint::Length(10), Constraint::Min(0)].as_ref())
             .split(area);
 
         // 顶部统计区域
         let stats_lines = vec![
-            Line::from(format!("📊 学习进度统计")),
+            Line::from("📊 学习进度仪表板"),
             Line::from(""),
             Line::from(format!("总体完成度: {:.1}% ({}/{})", completion, completed, total)),
             Line::from(""),
+            Line::from("快捷键: ↑↓ 选择模块 | Enter/U 更新进度 | P 练习 | A 成就"),
         ];
 
         let stats = Paragraph::new(stats_lines)
@@ -608,7 +654,7 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         // 进度条
         let gauge_area = Rect {
             x: chunks[0].x + 2,
-            y: chunks[0].y + 5,
+            y: chunks[0].y + 7,
             width: chunks[0].width.saturating_sub(4),
             height: 1,
         };
@@ -618,9 +664,9 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
             .percent(completion as u16);
         f.render_widget(gauge, gauge_area);
 
-        // 模块列表
+        // 模块列表 - 可选择
         let mut module_items = Vec::new();
-        for module in &repo.modules {
+        for (i, module) in repo.modules.iter().enumerate() {
             let progress = repo.get_module_progress(&module.id);
             let status_icon = if let Some(p) = progress {
                 match p.status.as_str() {
@@ -642,16 +688,22 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
                 0
             };
 
+            let prefix = if i == selected_module { ">> " } else { "   " };
             module_items.push(ListItem::new(format!(
-                "{} {} - {}/5 任务",
-                status_icon, module.name, tasks_done
+                "{}{} {} - {}/5 任务",
+                prefix, status_icon, module.name, tasks_done
             )));
         }
 
         let module_list = List::new(module_items)
-            .block(Block::default().borders(Borders::ALL).title("学习模块"))
-            .style(Style::default().fg(Color::White));
-        f.render_widget(module_list, chunks[1]);
+            .block(Block::default().borders(Borders::ALL).title("学习模块 (↑↓ 选择)"))
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+
+        let mut list_state = ListState::default();
+        list_state.select(Some(selected_module));
+
+        f.render_stateful_widget(module_list, chunks[1], &mut list_state);
     } else {
         let text = vec![
             Line::from("📊 学习仪表板"),

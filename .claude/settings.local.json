@@ -14,7 +14,9 @@
       "Bash(cargo fmt:*)",
       "Bash(openspec list:*)",
       "Bash(openspec show:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cargo clean:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }
