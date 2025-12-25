@@ -19,6 +19,10 @@ use anyhow::Result;
 #[command(about = "Rust 学习伴侣 - 追踪学习进度，提供练习和激励", long_about = None)]
 #[command(version = "0.1.0")]
 struct Cli {
+    /// 项目路径（包含 module-XX-* 目录的根目录）
+    #[arg(short, long, global = true, default_value = ".")]
+    path: String,
+
     /// 启动交互式 TUI 模式
     #[arg(short, long, global = true)]
     tui: bool,
@@ -82,8 +86,8 @@ fn main() -> Result<()> {
     let use_tui = cli.tui || cli.interactive || cli.command.is_none();
 
     if use_tui {
-        // 启动 TUI 模式
-        tui::run_tui()?;
+        // 启动 TUI 模式，传递项目路径
+        tui::run_tui(&cli.path)?;
     } else {
         // CLI 模式
         if let Some(command) = cli.command {
@@ -92,13 +96,13 @@ fn main() -> Result<()> {
                     ui::show_dashboard(&path)?;
                 }
                 Commands::Update { module, task } => {
-                    let repo = repo::LearningRepo::new(".")?;
+                    let repo = repo::LearningRepo::new(&cli.path)?;
                     progress::update_task_status(&repo, &module, &task)?;
                     println!("✅ 已更新 {} 的 {} 任务状态", module, task);
                     ui::show_encouragement();
                 }
                 Commands::Practice { module, count } => {
-                    let repo = repo::LearningRepo::new(".")?;
+                    let repo = repo::LearningRepo::new(&cli.path)?;
                     exercise::run_practice(&repo, &module, count)?;
                 }
                 Commands::Remind { hour, minute } => {

@@ -26,14 +26,15 @@ cargo build --release
 直接运行程序进入交互式终端界面：
 
 ```bash
-# 默认启动 TUI 模式
+# 默认启动 TUI 模式（使用当前目录）
 cargo run
 
-# 或使用 --tui 标志
-cargo run -- --tui
+# 指定项目路径
+cargo run -- --path ..
 
-# 或使用 -i 简写
-cargo run -- -i
+# 从 learning-companion 目录指定父目录
+cd learning-companion
+cargo run -- --path ..
 ```
 
 **TUI 按键操作：**

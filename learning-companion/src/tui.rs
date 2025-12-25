@@ -69,11 +69,13 @@ pub struct App {
     pub message: Option<String>,
     /// 是否应该退出
     pub should_quit: bool,
+    /// 项目路径
+    pub project_path: String,
 }
 
 impl App {
     /// 创建新应用
-    pub fn new() -> Self {
+    pub fn new(project_path: String) -> Self {
         let main_menu_items = vec![
             "📊 查看学习仪表板".to_string(),
             "📚 更新学习进度".to_string(),
@@ -94,13 +96,14 @@ impl App {
             repo: None,
             message: None,
             should_quit: false,
+            project_path,
         }
     }
 
     /// 确保仓库已加载
     fn ensure_repo(&mut self) -> Result<()> {
         if self.repo.is_none() {
-            self.repo = Some(LearningRepo::new(".")?);
+            self.repo = Some(LearningRepo::new(&self.project_path)?);
         }
         Ok(())
     }
@@ -343,7 +346,7 @@ impl App {
 }
 
 /// 运行 TUI 应用
-pub fn run_tui() -> Result<()> {
+pub fn run_tui(project_path: &str) -> Result<()> {
     // 初始化终端
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -352,7 +355,7 @@ pub fn run_tui() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // 创建应用
-    let mut app = App::new();
+    let mut app = App::new(project_path.to_string());
 
     // 主循环
     loop {
