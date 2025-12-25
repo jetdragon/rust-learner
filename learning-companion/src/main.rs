@@ -9,9 +9,9 @@ mod repo;
 mod storage;
 mod ui;
 mod notify;
+mod tui;
 
 use clap::{Parser, Subcommand};
-use chrono::Local;
 use anyhow::Result;
 
 #[derive(Parser)]
@@ -19,8 +19,16 @@ use anyhow::Result;
 #[command(about = "Rust 学习伴侣 - 追踪学习进度，提供练习和激励", long_about = None)]
 #[command(version = "0.1.0")]
 struct Cli {
+    /// 启动交互式 TUI 模式
+    #[arg(short, long, global = true)]
+    tui: bool,
+
+    /// 启动交互式 TUI 模式（简写）
+    #[arg(short = 'i', long, global = true)]
+    interactive: bool,
+
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -70,30 +78,41 @@ fn main() -> Result<()> {
     // 确保数据库存在
     db::init_db()?;
 
-    match cli.command {
-        Commands::Dashboard { path } => {
-            ui::show_dashboard(&path)?;
-        }
-        Commands::Update { module, task } => {
-            let repo = repo::LearningRepo::new(".")?;
-            progress::update_task_status(&repo, &module, &task)?;
-            println!("✅ 已更新 {} 的 {} 任务状态", module, task);
-            ui::show_encouragement();
-        }
-        Commands::Practice { module, count } => {
-            let repo = repo::LearningRepo::new(".")?;
-            exercise::run_practice(&repo, &module, count)?;
-        }
-        Commands::Remind { hour, minute } => {
-            notify::set_reminder(hour, minute)?;
-            println!("⏰ 已设置提醒时间为 {:02}:{:02}", hour, minute);
-            println!("💡 学习伴侣将在此时间提醒你学习");
-        }
-        Commands::Achievements => {
-            ui::show_achievements()?;
-        }
-        Commands::Export => {
-            storage::export_data()?;
+    // 检查是否启动 TUI 模式
+    let use_tui = cli.tui || cli.interactive || cli.command.is_none();
+
+    if use_tui {
+        // 启动 TUI 模式
+        tui::run_tui()?;
+    } else {
+        // CLI 模式
+        if let Some(command) = cli.command {
+            match command {
+                Commands::Dashboard { path } => {
+                    ui::show_dashboard(&path)?;
+                }
+                Commands::Update { module, task } => {
+                    let repo = repo::LearningRepo::new(".")?;
+                    progress::update_task_status(&repo, &module, &task)?;
+                    println!("✅ 已更新 {} 的 {} 任务状态", module, task);
+                    ui::show_encouragement();
+                }
+                Commands::Practice { module, count } => {
+                    let repo = repo::LearningRepo::new(".")?;
+                    exercise::run_practice(&repo, &module, count)?;
+                }
+                Commands::Remind { hour, minute } => {
+                    notify::set_reminder(hour, minute)?;
+                    println!("⏰ 已设置提醒时间为 {:02}:{:02}", hour, minute);
+                    println!("💡 学习伴侣将在此时间提醒你学习");
+                }
+                Commands::Achievements => {
+                    ui::show_achievements()?;
+                }
+                Commands::Export => {
+                    storage::export_data()?;
+                }
+            }
         }
     }
 
