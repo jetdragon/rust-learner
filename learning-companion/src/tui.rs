@@ -12,23 +12,41 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::Line,
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
+    text::{Line, Span},
+    widgets::{Block, Borders, Gauge, List, ListItem, ListState, Paragraph, Wrap},
     Frame, Terminal,
 };
 use std::io;
 use std::time::Duration;
+
+// 导入项目模块
+use crate::db;
+use crate::repo::{LearningRepo, ModuleProgress};
 
 /// 应用状态
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
     MainMenu,
     Dashboard,
-    UpdateProgress,
+    UpdateProgress { selected_module: usize, focus_area: FocusArea },
     Practice,
     Achievements,
-    RemindSetup,
+    RemindSetup { hour: u8, minute: u8, focus_field: TimeField },
     Export,
+}
+
+/// 焦点区域（用于 UpdateProgress）
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FocusArea {
+    ModuleList,
+    TaskList,
+}
+
+/// 时间字段焦点（用于 RemindSetup）
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum TimeField {
+    Hour,
+    Minute,
 }
 
 /// 主应用结构
@@ -45,8 +63,10 @@ pub struct App {
     pub title: String,
     /// 帮助提示
     pub help_text: String,
-    /// 错误消息
-    pub error_message: Option<String>,
+    /// 仓库数据（延迟加载）
+    pub repo: Option<LearningRepo>,
+    /// 消息提示
+    pub message: Option<String>,
     /// 是否应该退出
     pub should_quit: bool,
 }
@@ -71,22 +91,32 @@ impl App {
             main_menu_items,
             title: "🦀 Rust 学习伴侣".to_string(),
             help_text: "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
-            error_message: None,
+            repo: None,
+            message: None,
             should_quit: false,
         }
     }
 
+    /// 确保仓库已加载
+    fn ensure_repo(&mut self) -> Result<()> {
+        if self.repo.is_none() {
+            self.repo = Some(LearningRepo::new(".")?);
+        }
+        Ok(())
+    }
+
     /// 处理按键事件
-    pub fn handle_key(&mut self, key: KeyCode) {
+    pub fn handle_key(&mut self, key: KeyCode) -> Result<()> {
         match self.state {
             AppState::MainMenu => self.handle_main_menu_key(key),
             AppState::Dashboard => self.handle_dashboard_key(key),
-            AppState::UpdateProgress => self.handle_update_progress_key(key),
+            AppState::UpdateProgress { .. } => self.handle_update_progress_key(key),
             AppState::Practice => self.handle_practice_key(key),
             AppState::Achievements => self.handle_achievements_key(key),
-            AppState::RemindSetup => self.handle_remind_setup_key(key),
+            AppState::RemindSetup { .. } => self.handle_remind_setup_key(key),
             AppState::Export => self.handle_export_key(key),
         }
+        Ok(())
     }
 
     /// 主菜单按键处理
@@ -103,7 +133,9 @@ impl App {
                 }
             }
             KeyCode::Enter => {
-                self.enter_main_menu_selection();
+                if let Err(e) = self.enter_main_menu_selection() {
+                    self.message = Some(format!("错误: {}", e));
+                }
             }
             KeyCode::Char('q') | KeyCode::Esc => {
                 self.should_quit = true;
@@ -113,17 +145,40 @@ impl App {
     }
 
     /// 进入主菜单选中的项
-    fn enter_main_menu_selection(&mut self) {
+    fn enter_main_menu_selection(&mut self) -> Result<()> {
         match self.main_menu_selected {
-            0 => self.push_state(AppState::Dashboard),
-            1 => self.push_state(AppState::UpdateProgress),
-            2 => self.push_state(AppState::Practice),
-            3 => self.push_state(AppState::Achievements),
-            4 => self.push_state(AppState::RemindSetup),
-            5 => self.push_state(AppState::Export),
+            0 => {
+                self.ensure_repo()?;
+                self.push_state(AppState::Dashboard);
+            }
+            1 => {
+                self.ensure_repo()?;
+                self.push_state(AppState::UpdateProgress {
+                    selected_module: 0,
+                    focus_area: FocusArea::ModuleList,
+                });
+            }
+            2 => {
+                self.ensure_repo()?;
+                self.push_state(AppState::Practice);
+            }
+            3 => {
+                self.push_state(AppState::Achievements);
+            }
+            4 => {
+                self.push_state(AppState::RemindSetup {
+                    hour: 20,
+                    minute: 0,
+                    focus_field: TimeField::Hour,
+                });
+            }
+            5 => {
+                self.push_state(AppState::Export);
+            }
             6 => self.should_quit = true,
             _ => {}
         }
+        Ok(())
     }
 
     /// 仪表板按键处理
@@ -138,11 +193,41 @@ impl App {
 
     /// 更新进度按键处理
     fn handle_update_progress_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
+        if let AppState::UpdateProgress { ref mut selected_module, ref mut focus_area } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.pop_state();
+                }
+                KeyCode::Tab => {
+                    *focus_area = match focus_area {
+                        FocusArea::ModuleList => FocusArea::TaskList,
+                        FocusArea::TaskList => FocusArea::ModuleList,
+                    };
+                }
+                KeyCode::Up => {
+                    if let Some(repo) = &self.repo {
+                        if *focus_area == FocusArea::ModuleList && *selected_module > 0 {
+                            *selected_module -= 1;
+                        }
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(repo) = &self.repo {
+                        if *focus_area == FocusArea::ModuleList && *selected_module < repo.modules.len().saturating_sub(1) {
+                            *selected_module += 1;
+                        }
+                    }
+                }
+                KeyCode::Enter => {
+                    if let Some(repo) = &self.repo {
+                        if let Some(module) = repo.modules.get(*selected_module) {
+                            let _ = crate::progress::update_task_status(repo, &module.id, "concept");
+                            self.message = Some(format!("✅ 已更新 {} 的学习进度", module.name));
+                        }
+                    }
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
@@ -151,6 +236,12 @@ impl App {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.pop_state();
+            }
+            KeyCode::Enter => {
+                if let Some(ref repo) = self.repo {
+                    let _ = crate::exercise::run_practice(repo, "module-01-basics", 5);
+                    self.message = Some("练习完成！".to_string());
+                }
             }
             _ => {}
         }
@@ -168,11 +259,36 @@ impl App {
 
     /// 提醒设置按键处理
     fn handle_remind_setup_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
+        if let AppState::RemindSetup { ref mut hour, ref mut minute, ref mut focus_field } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.pop_state();
+                }
+                KeyCode::Tab => {
+                    *focus_field = match focus_field {
+                        TimeField::Hour => TimeField::Minute,
+                        TimeField::Minute => TimeField::Hour,
+                    };
+                }
+                KeyCode::Up => {
+                    match focus_field {
+                        TimeField::Hour => *hour = (*hour + 1).min(23),
+                        TimeField::Minute => *minute = (*minute + 1).min(59),
+                    }
+                }
+                KeyCode::Down => {
+                    match focus_field {
+                        TimeField::Hour => *hour = hour.saturating_sub(1),
+                        TimeField::Minute => *minute = minute.saturating_sub(1),
+                    }
+                }
+                KeyCode::Enter => {
+                    let _ = crate::notify::set_reminder(*hour, *minute);
+                    self.message = Some(format!("⏰ 已设置提醒时间为 {:02}:{:02}", hour, minute));
+                    self.pop_state();
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
@@ -182,6 +298,10 @@ impl App {
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.pop_state();
             }
+            KeyCode::Enter => {
+                let _ = crate::storage::export_data();
+                self.message = Some("📤 数据导出完成！".to_string());
+            }
             _ => {}
         }
     }
@@ -190,6 +310,7 @@ impl App {
     fn push_state(&mut self, new_state: AppState) {
         self.state_stack.push(self.state.clone());
         self.state = new_state;
+        self.message = None;
         self.update_help_text();
     }
 
@@ -197,6 +318,7 @@ impl App {
     fn pop_state(&mut self) {
         if let Some(prev_state) = self.state_stack.pop() {
             self.state = prev_state;
+            self.message = None;
             self.update_help_text();
         }
     }
@@ -205,7 +327,12 @@ impl App {
     fn update_help_text(&mut self) {
         self.help_text = match self.state {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
-            _ => "Esc 返回 | q 退出".to_string(),
+            AppState::Dashboard => "Esc 返回 | q 退出".to_string(),
+            AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
+            AppState::Practice => "Enter 开始练习 | Esc 返回".to_string(),
+            AppState::Achievements => "Esc 返回".to_string(),
+            AppState::RemindSetup { .. } => "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
+            AppState::Export => "Enter 导出 | Esc 返回".to_string(),
         };
     }
 
@@ -240,7 +367,7 @@ pub fn run_tui() -> Result<()> {
         // 读取事件（超时 100ms）
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
-                app.handle_key(key.code);
+                app.handle_key(key.code)?;
             }
         }
     }
@@ -279,29 +406,50 @@ fn ui(f: &mut Frame, app: &mut App) {
     draw_header(f, chunks[0], &app.title);
 
     // 绘制主内容区
-    match app.state {
+    match &app.state {
         AppState::MainMenu => draw_main_menu(f, chunks[1], app),
-        AppState::Dashboard => draw_dashboard(f, chunks[1]),
-        AppState::UpdateProgress => draw_update_progress(f, chunks[1]),
+        AppState::Dashboard => draw_dashboard(f, chunks[1], app),
+        AppState::UpdateProgress { selected_module, focus_area } => {
+            draw_update_progress(f, chunks[1], app, *selected_module, *focus_area);
+        }
         AppState::Practice => draw_practice(f, chunks[1]),
         AppState::Achievements => draw_achievements(f, chunks[1]),
-        AppState::RemindSetup => draw_remind_setup(f, chunks[1]),
+        AppState::RemindSetup { hour, minute, focus_field } => {
+            draw_remind_setup(f, chunks[1], *hour, *minute, *focus_field);
+        }
         AppState::Export => draw_export(f, chunks[1]),
     }
 
+    // 绘制消息（如果有）
+    if let Some(msg) = &app.message {
+        let msg_area = Rect {
+            x: chunks[2].x,
+            y: chunks[2].y + 1,
+            width: chunks[2].width,
+            height: chunks[2].height.saturating_sub(1),
+        };
+        draw_message(f, msg_area, msg);
+    }
+
     // 绘制底部提示
-    draw_footer(f, chunks[2], app.get_help_text());
+    let footer_area = if app.message.is_some() {
+        Rect {
+            x: chunks[2].x,
+            y: chunks[2].y,
+            width: chunks[2].width,
+            height: 1,
+        }
+    } else {
+        chunks[2]
+    };
+    draw_footer(f, footer_area, app.get_help_text());
 }
 
 /// 绘制标题栏
 fn draw_header(f: &mut Frame, area: Rect, title: &str) {
     let title = Paragraph::new(Line::from(title.to_string()))
         .alignment(Alignment::Center)
-        .style(
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        );
+        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
     f.render_widget(title, area);
 }
 
@@ -309,18 +457,24 @@ fn draw_header(f: &mut Frame, area: Rect, title: &str) {
 fn draw_footer(f: &mut Frame, area: Rect, help_text: &str) {
     let footer = Paragraph::new(Line::from(help_text.to_string()))
         .alignment(Alignment::Center)
-        .style(
-            Style::default()
-                .fg(Color::Gray)
-        );
+        .style(Style::default().fg(Color::Gray));
     f.render_widget(footer, area);
+}
+
+/// 绘制消息
+fn draw_message(f: &mut Frame, area: Rect, message: &str) {
+    let msg = Paragraph::new(Line::from(message.to_string()))
+        .alignment(Alignment::Center)
+        .style(Style::default().fg(Color::Green));
+    f.render_widget(msg, area);
 }
 
 /// 绘制尺寸警告
 fn draw_size_warning(f: &mut Frame, area: Rect) {
     let warning = Paragraph::new("终端窗口太小！\n请调整到至少 80x24 字符")
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD));
+        .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
+        .wrap(Wrap { trim: true });
     f.render_widget(warning, area);
 }
 
@@ -335,11 +489,7 @@ fn draw_main_menu(f: &mut Frame, area: Rect, app: &mut App) {
     let list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("主菜单"))
         .style(Style::default().fg(Color::White))
-        .highlight_style(
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        )
+        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
         .highlight_symbol(">> ");
 
     let mut list_state = ListState::default();
@@ -349,37 +499,158 @@ fn draw_main_menu(f: &mut Frame, area: Rect, app: &mut App) {
 }
 
 /// 绘制仪表板
-fn draw_dashboard(f: &mut Frame, area: Rect) {
-    let text = vec![
-        Line::from("📊 学习仪表板"),
-        Line::from(""),
-        Line::from("这里将显示学习进度和统计数据"),
-        Line::from(""),
-        Line::from("(功能开发中...)"),
-    ];
+fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
+    if let Some(repo) = &app.repo {
+        let completion = repo.completion_percentage();
+        let completed = repo.progress.iter().filter(|p| p.status == "[x]").count();
+        let total = repo.modules.len();
 
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("仪表板"))
-        .wrap(Wrap { trim: true });
+        // 创建垂直布局
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(8), Constraint::Min(0)].as_ref())
+            .split(area);
 
-    f.render_widget(paragraph, area);
+        // 顶部统计区域
+        let stats_lines = vec![
+            Line::from(format!("📊 学习进度统计")),
+            Line::from(""),
+            Line::from(format!("总体完成度: {:.1}% ({}/{})", completion, completed, total)),
+            Line::from(""),
+        ];
+
+        let stats = Paragraph::new(stats_lines)
+            .block(Block::default().borders(Borders::ALL).title("统计"))
+            .wrap(Wrap { trim: true });
+        f.render_widget(stats, chunks[0]);
+
+        // 进度条
+        let gauge_area = Rect {
+            x: chunks[0].x + 2,
+            y: chunks[0].y + 5,
+            width: chunks[0].width.saturating_sub(4),
+            height: 1,
+        };
+        let gauge = Gauge::default()
+            .block(Block::default().borders(Borders::ALL))
+            .gauge_style(Style::default().fg(Color::Green))
+            .percent(completion as u16);
+        f.render_widget(gauge, gauge_area);
+
+        // 模块列表
+        let mut module_items = Vec::new();
+        for module in &repo.modules {
+            let progress = repo.get_module_progress(&module.id);
+            let status_icon = if let Some(p) = progress {
+                match p.status.as_str() {
+                    "[x]" => "✅",
+                    "[~]" => "🟡",
+                    _ => "⬜",
+                }
+            } else {
+                "⬜"
+            };
+
+            let tasks_done = if let Some(p) = progress {
+                let count = [p.concept, p.examples, p.exercises, p.project, p.checklist]
+                    .iter()
+                    .filter(|&&x| x)
+                    .count();
+                count
+            } else {
+                0
+            };
+
+            module_items.push(ListItem::new(format!(
+                "{} {} - {}/5 任务",
+                status_icon, module.name, tasks_done
+            )));
+        }
+
+        let module_list = List::new(module_items)
+            .block(Block::default().borders(Borders::ALL).title("学习模块"))
+            .style(Style::default().fg(Color::White));
+        f.render_widget(module_list, chunks[1]);
+    } else {
+        let text = vec![
+            Line::from("📊 学习仪表板"),
+            Line::from(""),
+            Line::from("正在加载数据..."),
+        ];
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::ALL).title("仪表板"))
+            .wrap(Wrap { trim: true });
+        f.render_widget(paragraph, area);
+    }
 }
 
 /// 绘制更新进度界面
-fn draw_update_progress(f: &mut Frame, area: Rect) {
-    let text = vec![
-        Line::from("📚 更新学习进度"),
-        Line::from(""),
-        Line::from("这里将显示模块选择和任务复选框"),
-        Line::from(""),
-        Line::from("(功能开发中...)"),
-    ];
+fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: usize, focus_area: FocusArea) {
+    if let Some(repo) = &app.repo {
+        // 创建水平布局
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+            .split(area);
 
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("更新进度"))
-        .wrap(Wrap { trim: true });
+        // 模块列表
+        let mut module_items = Vec::new();
+        for (i, module) in repo.modules.iter().enumerate() {
+            let prefix = if i == selected_module && focus_area == FocusArea::ModuleList {
+                ">> "
+            } else {
+                "   "
+            };
+            module_items.push(ListItem::new(format!("{}{}", prefix, module.name)));
+        }
 
-    f.render_widget(paragraph, area);
+        let module_list = List::new(module_items)
+            .block(Block::default().borders(Borders::ALL).title("选择模块"))
+            .style(Style::default().fg(Color::White));
+        f.render_widget(module_list, chunks[0]);
+
+        // 任务列表
+        if let Some(module) = repo.modules.get(selected_module) {
+            let progress = repo.get_module_progress(&module.id);
+            let border_style = if focus_area == FocusArea::TaskList {
+                Style::default().fg(Color::Yellow)
+            } else {
+                Style::default()
+            };
+
+            let task_lines = vec![
+                Line::from("标记完成的任务:"),
+                Line::from(""),
+                Line::from(format!(
+                    "[{}] 概念学习",
+                    if let Some(p) = progress { if p.concept { 'x' } else { ' ' } } else { ' ' }
+                )),
+                Line::from(format!(
+                    "[{}] 代码示例",
+                    if let Some(p) = progress { if p.examples { 'x' } else { ' ' } } else { ' ' }
+                )),
+                Line::from(format!(
+                    "[{}] 练习题",
+                    if let Some(p) = progress { if p.exercises { 'x' } else { ' ' } } else { ' ' }
+                )),
+                Line::from(format!(
+                    "[{}] 综合练习",
+                    if let Some(p) = progress { if p.project { 'x' } else { ' ' } } else { ' ' }
+                )),
+                Line::from(format!(
+                    "[{}] 自检通过",
+                    if let Some(p) = progress { if p.checklist { 'x' } else { ' ' } } else { ' ' }
+                )),
+                Line::from(""),
+                Line::from("(按 Enter 标记完成概念学习)"),
+            ];
+
+            let task_paragraph = Paragraph::new(task_lines)
+                .block(Block::default().borders(Borders::ALL).title("任务列表").border_style(border_style))
+                .wrap(Wrap { trim: true });
+            f.render_widget(task_paragraph, chunks[1]);
+        }
+    }
 }
 
 /// 绘制练习界面
@@ -387,14 +658,17 @@ fn draw_practice(f: &mut Frame, area: Rect) {
     let text = vec![
         Line::from("✏️  练习测试"),
         Line::from(""),
-        Line::from("这里将显示练习题目和选项"),
+        Line::from("按 Enter 开始练习测试"),
         Line::from(""),
-        Line::from("(功能开发中...)"),
+        Line::from("将进行 5 道基础入门模块的练习题"),
+        Line::from(""),
+        Line::from("(练习功能开发中...)"),
     ];
 
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).title("练习测试"))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Center);
 
     f.render_widget(paragraph, area);
 }
@@ -417,13 +691,37 @@ fn draw_achievements(f: &mut Frame, area: Rect) {
 }
 
 /// 绘制提醒设置界面
-fn draw_remind_setup(f: &mut Frame, area: Rect) {
+fn draw_remind_setup(f: &mut Frame, area: Rect, hour: u8, minute: u8, focus_field: TimeField) {
+    let hour_style = if focus_field == TimeField::Hour {
+        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    };
+
+    let minute_style = if focus_field == TimeField::Minute {
+        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    };
+
     let text = vec![
         Line::from("⏰ 学习提醒设置"),
         Line::from(""),
-        Line::from("这里将设置每日学习提醒时间"),
+        Line::from("设置每日学习提醒时间:"),
         Line::from(""),
-        Line::from("(功能开发中...)"),
+        Line::from(vec![
+            Span::raw("  小时: [ "),
+            Span::styled(format!("{:02}", hour), hour_style),
+            Span::raw(" ]"),
+        ]),
+        Line::from(vec![
+            Span::raw("  分钟: [ "),
+            Span::styled(format!("{:02}", minute), minute_style),
+            Span::raw(" ]"),
+        ]),
+        Line::from(""),
+        Line::from(""),
+        Line::from("操作: ↑↓ 调整 | Tab 切换 | Enter 确认"),
     ];
 
     let paragraph = Paragraph::new(text)
@@ -438,14 +736,15 @@ fn draw_export(f: &mut Frame, area: Rect) {
     let text = vec![
         Line::from("📤 导出学习数据"),
         Line::from(""),
-        Line::from("这里将导出所有学习记录"),
+        Line::from("将导出所有学习记录到文件"),
         Line::from(""),
         Line::from("(功能开发中...)"),
     ];
 
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).title("数据导出"))
-        .wrap(Wrap { trim: true });
+        .wrap(Wrap { trim: true })
+        .alignment(Alignment::Center);
 
     f.render_widget(paragraph, area);
 }
