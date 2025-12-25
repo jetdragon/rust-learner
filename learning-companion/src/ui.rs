@@ -136,49 +136,33 @@ pub fn show_achievements() -> Result<()> {
     }
 
     for achievement in &achievements {
-        let icon = match achievement.achievement_type.as_str() {
-            "first_module" => "🎓",
-            "streak_7" => "🔥",
-            "streak_30" => "⚡",
-            "perfect_score" => "💯",
-            "code_quality" => "🌟",
+        let icon = match achievement.name.as_str() {
+            "first_steps" => "🎓",
+            "week_warrior" => "🔥",
+            "month_master" => "⚡",
+            "practice_perfect" => "💯",
+            "half_way" => "🌟",
+            "completionist" => "👑",
             _ => "🏅",
         };
 
-        let name = match achievement.achievement_type.as_str() {
-            "first_module" => "初学者",
-            "streak_7" => "坚持一周",
-            "streak_30" => "坚持一个月",
-            "perfect_score" => "完美主义者",
-            "code_quality" => "代码质量大师",
-            _ => "未知成就",
-        };
+        let date_str = achievement.unlocked_at
+            .map(|d| d.format("%Y-%m-%d").to_string())
+            .unwrap_or_else(|| "未知".to_string());
 
-        println!("  {} {} - 解锁于 {}", icon, name,
-            achievement.unlocked_at.format("%Y-%m-%d"));
+        println!("  {} {} - 解锁于 {}", icon, achievement.description, date_str);
     }
 
     println!();
 
     // 显示待解锁成就
-    let locked = vec![
-        ("first_module", "🎓 初学者 - 完成第一个模块"),
-        ("streak_7", "🔥 坚持一周 - 连续学习 7 天"),
-        ("streak_30", "⚡ 坚持一个月 - 连续学习 30 天"),
-        ("perfect_score", "💯 完美主义者 - 练习得 100%"),
-        ("code_quality", "🌟 代码质量大师 - 通过 clippy 检查"),
-    ];
-
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     println!("🔒 待解锁成就");
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-    let unlocked_types: std::collections::HashSet<String> =
-        achievements.iter().map(|a| a.achievement_type.clone()).collect();
-
-    for (id, desc) in locked {
-        if !unlocked_types.contains(id) {
-            println!("  🔒 {}", desc);
+    for achievement in &achievements {
+        if !achievement.unlocked {
+            println!("  🔒 {}", achievement.description);
         }
     }
 

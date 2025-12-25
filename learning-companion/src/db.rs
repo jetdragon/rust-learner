@@ -279,24 +279,44 @@ pub fn get_module_mastery(module_id: &str) -> Option<f32> {
 /// 成就记录
 #[derive(Debug, Clone)]
 pub struct Achievement {
-    pub achievement_type: String,
-    pub unlocked_at: chrono::DateTime<Local>,
+    pub name: String,
+    pub description: String,
+    pub unlocked: bool,
+    pub unlocked_at: Option<chrono::DateTime<Local>>,
 }
+
+/// 成就定义
+const ALL_ACHIEVEMENTS: &[(&str, &str)] = &[
+    ("first_steps", "初次学习 - 完成第一个模块"),
+    ("week_warrior", "坚持一周 - 连续学习 7 天"),
+    ("month_master", "坚持一月 - 连续学习 30 天"),
+    ("practice_perfect", "练习达人 - 单次练习 100% 正确"),
+    ("half_way", "半程高手 - 完成 50% 的学习内容"),
+    ("completionist", "学习大师 - 完成所有模块"),
+];
 
 /// 获取所有成就
 pub fn get_all_achievements() -> Result<Vec<Achievement>> {
     let conn = Connection::open(db_path())?;
+
+    // 获取已解锁的成就
     let mut stmt = conn.prepare(
-        "SELECT achievement_type, unlocked_at FROM achievements ORDER BY unlocked_at"
+        "SELECT achievement_type FROM achievements"
     )?;
 
-    let achievements = stmt.query_map([], |row| {
-        Ok(Achievement {
-            achievement_type: row.get(0)?,
-            unlocked_at: row.get(1)?,
-        })
-    })?
-    .collect::<Result<Vec<_>, _>>()?;
+    let unlocked_types: Vec<String> = stmt.query_map([], |row| row.get(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut achievements = Vec::new();
+    for (achievement_type, description) in ALL_ACHIEVEMENTS {
+        let unlocked = unlocked_types.contains(&achievement_type.to_string());
+        achievements.push(Achievement {
+            name: achievement_type.to_string(),
+            description: description.to_string(),
+            unlocked,
+            unlocked_at: None, // 简化实现
+        });
+    }
 
     Ok(achievements)
 }

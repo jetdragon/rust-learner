@@ -20,7 +20,6 @@ use std::io;
 use std::time::Duration;
 
 // 导入项目模块
-use crate::db;
 use crate::repo::{LearningRepo, ModuleProgress};
 
 /// 应用状态
@@ -28,8 +27,8 @@ use crate::repo::{LearningRepo, ModuleProgress};
 pub enum AppState {
     MainMenu,
     Dashboard,
-    UpdateProgress { selected_module: usize, focus_area: FocusArea },
-    Practice,
+    UpdateProgress { selected_module: usize, selected_task: usize, focus_area: FocusArea },
+    Practice { selected_module: usize, question_count: usize, focus_field: PracticeField },
     Achievements,
     RemindSetup { hour: u8, minute: u8, focus_field: TimeField },
     Export,
@@ -47,6 +46,13 @@ pub enum FocusArea {
 pub enum TimeField {
     Hour,
     Minute,
+}
+
+/// 练习界面字段焦点
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum PracticeField {
+    Module,
+    Count,
 }
 
 /// 主应用结构
@@ -114,7 +120,7 @@ impl App {
             AppState::MainMenu => self.handle_main_menu_key(key),
             AppState::Dashboard => self.handle_dashboard_key(key),
             AppState::UpdateProgress { .. } => self.handle_update_progress_key(key),
-            AppState::Practice => self.handle_practice_key(key),
+            AppState::Practice { .. } => self.handle_practice_key(key),
             AppState::Achievements => self.handle_achievements_key(key),
             AppState::RemindSetup { .. } => self.handle_remind_setup_key(key),
             AppState::Export => self.handle_export_key(key),
@@ -158,12 +164,17 @@ impl App {
                 self.ensure_repo()?;
                 self.push_state(AppState::UpdateProgress {
                     selected_module: 0,
+                    selected_task: 0,
                     focus_area: FocusArea::ModuleList,
                 });
             }
             2 => {
                 self.ensure_repo()?;
-                self.push_state(AppState::Practice);
+                self.push_state(AppState::Practice {
+                    selected_module: 0,
+                    question_count: 5,
+                    focus_field: PracticeField::Module,
+                });
             }
             3 => {
                 self.push_state(AppState::Achievements);
@@ -196,7 +207,7 @@ impl App {
 
     /// 更新进度按键处理
     fn handle_update_progress_key(&mut self, key: KeyCode) {
-        if let AppState::UpdateProgress { ref mut selected_module, ref mut focus_area } = self.state {
+        if let AppState::UpdateProgress { ref mut selected_module, ref mut selected_task, ref mut focus_area } = self.state {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     self.pop_state();
@@ -209,23 +220,46 @@ impl App {
                 }
                 KeyCode::Up => {
                     if let Some(repo) = &self.repo {
-                        if *focus_area == FocusArea::ModuleList && *selected_module > 0 {
-                            *selected_module -= 1;
+                        match focus_area {
+                            FocusArea::ModuleList => {
+                                if *selected_module > 0 {
+                                    *selected_module -= 1;
+                                    *selected_task = 0;
+                                }
+                            }
+                            FocusArea::TaskList => {
+                                if *selected_task > 0 {
+                                    *selected_task -= 1;
+                                }
+                            }
                         }
                     }
                 }
                 KeyCode::Down => {
                     if let Some(repo) = &self.repo {
-                        if *focus_area == FocusArea::ModuleList && *selected_module < repo.modules.len().saturating_sub(1) {
-                            *selected_module += 1;
+                        match focus_area {
+                            FocusArea::ModuleList => {
+                                if *selected_module < repo.modules.len().saturating_sub(1) {
+                                    *selected_module += 1;
+                                    *selected_task = 0;
+                                }
+                            }
+                            FocusArea::TaskList => {
+                                if *selected_task < 4 {
+                                    *selected_task += 1;
+                                }
+                            }
                         }
                     }
                 }
                 KeyCode::Enter => {
                     if let Some(repo) = &self.repo {
                         if let Some(module) = repo.modules.get(*selected_module) {
-                            let _ = crate::progress::update_task_status(repo, &module.id, "concept");
-                            self.message = Some(format!("✅ 已更新 {} 的学习进度", module.name));
+                            let task_names = ["concept", "examples", "exercises", "project", "checklist"];
+                            let task = task_names.get(*selected_task).unwrap_or(&"concept");
+                            let _ = crate::progress::update_task_status(repo, &module.id, task);
+                            self.message = Some(format!("✅ 已更新 {} 的 {} 任务", module.name,
+                                ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(*selected_task).unwrap_or(&"")));
                         }
                     }
                 }
@@ -236,17 +270,59 @@ impl App {
 
     /// 练习按键处理
     fn handle_practice_key(&mut self, key: KeyCode) {
-        match key {
-            KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
-            }
-            KeyCode::Enter => {
-                if let Some(ref repo) = self.repo {
-                    let _ = crate::exercise::run_practice(repo, "module-01-basics", 5);
-                    self.message = Some("练习完成！".to_string());
+        if let AppState::Practice { ref mut selected_module, ref mut question_count, ref mut focus_field } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.pop_state();
                 }
+                KeyCode::Tab => {
+                    *focus_field = match focus_field {
+                        PracticeField::Module => PracticeField::Count,
+                        PracticeField::Count => PracticeField::Module,
+                    };
+                }
+                KeyCode::Up => {
+                    if let Some(repo) = &self.repo {
+                        match focus_field {
+                            PracticeField::Module => {
+                                if *selected_module > 0 {
+                                    *selected_module -= 1;
+                                }
+                            }
+                            PracticeField::Count => {
+                                if *question_count < 20 {
+                                    *question_count += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(repo) = &self.repo {
+                        match focus_field {
+                            PracticeField::Module => {
+                                if *selected_module < repo.modules.len().saturating_sub(1) {
+                                    *selected_module += 1;
+                                }
+                            }
+                            PracticeField::Count => {
+                                if *question_count > 1 {
+                                    *question_count -= 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Enter => {
+                    if let Some(ref repo) = self.repo {
+                        if let Some(module) = repo.modules.get(*selected_module) {
+                            let _ = crate::exercise::run_practice(repo, &module.id, *question_count);
+                            self.message = Some(format!("✅ {} 的练习完成！(共 {} 题)", module.name, question_count));
+                        }
+                    }
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
@@ -332,7 +408,7 @@ impl App {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
             AppState::Dashboard => "Esc 返回 | q 退出".to_string(),
             AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
-            AppState::Practice => "Enter 开始练习 | Esc 返回".to_string(),
+            AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回".to_string(),
             AppState::Achievements => "Esc 返回".to_string(),
             AppState::RemindSetup { .. } => "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
             AppState::Export => "Enter 导出 | Esc 返回".to_string(),
@@ -412,11 +488,13 @@ fn ui(f: &mut Frame, app: &mut App) {
     match &app.state {
         AppState::MainMenu => draw_main_menu(f, chunks[1], app),
         AppState::Dashboard => draw_dashboard(f, chunks[1], app),
-        AppState::UpdateProgress { selected_module, focus_area } => {
-            draw_update_progress(f, chunks[1], app, *selected_module, *focus_area);
+        AppState::UpdateProgress { selected_module, selected_task, focus_area } => {
+            draw_update_progress(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
         }
-        AppState::Practice => draw_practice(f, chunks[1]),
-        AppState::Achievements => draw_achievements(f, chunks[1]),
+        AppState::Practice { selected_module, question_count, focus_field } => {
+            draw_practice(f, chunks[1], app, *selected_module, *question_count, *focus_field);
+        }
+        AppState::Achievements => draw_achievements(f, chunks[1], app),
         AppState::RemindSetup { hour, minute, focus_field } => {
             draw_remind_setup(f, chunks[1], *hour, *minute, *focus_field);
         }
@@ -588,7 +666,7 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
 }
 
 /// 绘制更新进度界面
-fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: usize, focus_area: FocusArea) {
+fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, focus_area: FocusArea) {
     if let Some(repo) = &app.repo {
         // 创建水平布局
         let chunks = Layout::default()
@@ -607,8 +685,14 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
             module_items.push(ListItem::new(format!("{}{}", prefix, module.name)));
         }
 
+        let module_border_style = if focus_area == FocusArea::ModuleList {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
         let module_list = List::new(module_items)
-            .block(Block::default().borders(Borders::ALL).title("选择模块"))
+            .block(Block::default().borders(Borders::ALL).title("选择模块").border_style(module_border_style))
             .style(Style::default().fg(Color::White));
         f.render_widget(module_list, chunks[0]);
 
@@ -621,32 +705,39 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
                 Style::default()
             };
 
-            let task_lines = vec![
-                Line::from("标记完成的任务:"),
-                Line::from(""),
-                Line::from(format!(
-                    "[{}] 概念学习",
-                    if let Some(p) = progress { if p.concept { 'x' } else { ' ' } } else { ' ' }
-                )),
-                Line::from(format!(
-                    "[{}] 代码示例",
-                    if let Some(p) = progress { if p.examples { 'x' } else { ' ' } } else { ' ' }
-                )),
-                Line::from(format!(
-                    "[{}] 练习题",
-                    if let Some(p) = progress { if p.exercises { 'x' } else { ' ' } } else { ' ' }
-                )),
-                Line::from(format!(
-                    "[{}] 综合练习",
-                    if let Some(p) = progress { if p.project { 'x' } else { ' ' } } else { ' ' }
-                )),
-                Line::from(format!(
-                    "[{}] 自检通过",
-                    if let Some(p) = progress { if p.checklist { 'x' } else { ' ' } } else { ' ' }
-                )),
-                Line::from(""),
-                Line::from("(按 Enter 标记完成概念学习)"),
+            let task_names = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
+            let task_getters: [fn(&ModuleProgress) -> bool; 5] = [
+                |p| p.concept,
+                |p| p.examples,
+                |p| p.exercises,
+                |p| p.project,
+                |p| p.checklist,
             ];
+
+            let mut task_lines = vec![
+                Line::from("选择要标记完成的任务:"),
+                Line::from(""),
+            ];
+
+            for (i, task_name) in task_names.iter().enumerate() {
+                let is_done = if let Some(p) = progress {
+                    task_getters[i](p)
+                } else {
+                    false
+                };
+                let is_selected = i == selected_task && focus_area == FocusArea::TaskList;
+                let marker = if is_selected { ">> " } else { "   " };
+
+                task_lines.push(Line::from(format!(
+                    "{}[{}] {}",
+                    marker,
+                    if is_done { 'x' } else { ' ' },
+                    task_name
+                )));
+            }
+
+            task_lines.push(Line::from(""));
+            task_lines.push(Line::from("操作: ↑↓ 选择 | Tab 切换 | Enter 确认"));
 
             let task_paragraph = Paragraph::new(task_lines)
                 .block(Block::default().borders(Borders::ALL).title("任务列表").border_style(border_style))
@@ -657,34 +748,107 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
 }
 
 /// 绘制练习界面
-fn draw_practice(f: &mut Frame, area: Rect) {
-    let text = vec![
-        Line::from("✏️  练习测试"),
-        Line::from(""),
-        Line::from("按 Enter 开始练习测试"),
-        Line::from(""),
-        Line::from("将进行 5 道基础入门模块的练习题"),
-        Line::from(""),
-        Line::from("(练习功能开发中...)"),
-    ];
+fn draw_practice(f: &mut Frame, area: Rect, app: &App, selected_module: usize, question_count: usize, focus_field: PracticeField) {
+    if let Some(repo) = &app.repo {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(8), Constraint::Min(0)].as_ref())
+            .split(area);
 
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::ALL).title("练习测试"))
-        .wrap(Wrap { trim: true })
-        .alignment(Alignment::Center);
+        // 顶部标题区域
+        let title_lines = vec![
+            Line::from("✏️  练习测试"),
+            Line::from(""),
+            Line::from("选择模块和题目数量，然后按 Enter 开始练习"),
+            Line::from(""),
+        ];
 
-    f.render_widget(paragraph, area);
+        let title = Paragraph::new(title_lines)
+            .block(Block::default().borders(Borders::ALL).title("练习配置"))
+            .wrap(Wrap { trim: true })
+            .alignment(Alignment::Center);
+        f.render_widget(title, chunks[0]);
+
+        // 模块选择区域
+        let module_style = if focus_field == PracticeField::Module {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        let count_style = if focus_field == PracticeField::Count {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default()
+        };
+
+        if let Some(module) = repo.modules.get(selected_module) {
+            let config_lines = vec![
+                Line::from(""),
+                Line::from(vec![
+                    Span::raw("  模块: "),
+                    Span::styled(format!("{} (按 ↑↓ 切换)", module.name), module_style),
+                ]),
+                Line::from(""),
+                Line::from(vec![
+                    Span::raw("  题目数量: "),
+                    Span::styled(format!("{} (按 ↑↓ 调整)", question_count), count_style),
+                ]),
+                Line::from(""),
+                Line::from(""),
+                Line::from("操作: Tab 切换焦点 | ↑↓ 调整 | Enter 开始练习"),
+            ];
+
+            let config = Paragraph::new(config_lines)
+                .block(Block::default().borders(Borders::ALL).title("练习设置"))
+                .wrap(Wrap { trim: true });
+            f.render_widget(config, chunks[1]);
+        }
+    }
 }
 
 /// 绘制成就界面
-fn draw_achievements(f: &mut Frame, area: Rect) {
-    let text = vec![
+fn draw_achievements(f: &mut Frame, area: Rect, _app: &App) {
+    // 获取成就数据
+    let achievements = crate::db::get_all_achievements().unwrap_or_default();
+
+    let mut text = vec![
         Line::from("🏆 成就系统"),
         Line::from(""),
-        Line::from("这里将显示已解锁和待解锁的成就"),
-        Line::from(""),
-        Line::from("(功能开发中...)"),
     ];
+
+    if achievements.is_empty() {
+        text.push(Line::from("还没有解锁任何成就"));
+        text.push(Line::from(""));
+        text.push(Line::from("继续学习，解锁更多成就！"));
+    } else {
+        let unlocked_count = achievements.iter().filter(|a| a.unlocked).count();
+        text.push(Line::from(format!("已解锁: {}/{}", unlocked_count, achievements.len())));
+        text.push(Line::from(""));
+        text.push(Line::from(""));
+
+        for achievement in &achievements {
+            let icon = if achievement.unlocked { "🏆" } else { "🔒" };
+            let style = if achievement.unlocked {
+                Style::default().fg(Color::Yellow)
+            } else {
+                Style::default().fg(Color::DarkGray)
+            };
+
+            text.push(Line::from(vec![
+                Span::styled(format!("{} ", icon), style),
+                Span::styled(achievement.name.clone(), style),
+            ]));
+
+            if achievement.unlocked {
+                text.push(Line::from(vec![
+                    Span::raw("   "),
+                    Span::styled(achievement.description.clone(), Style::default().fg(Color::Gray)),
+                ]));
+            }
+            text.push(Line::from(""));
+        }
+    }
 
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL).title("成就"))
