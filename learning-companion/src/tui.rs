@@ -28,6 +28,7 @@ pub enum AppState {
     MainMenu,
     Dashboard { selected_module: usize },
     UpdateProgress { selected_module: usize, selected_task: usize, focus_area: FocusArea },
+    UpdateProgressConfirm { selected_module: usize, selected_task: usize, confirmed: bool },
     Practice { selected_module: usize, question_count: usize, focus_field: PracticeField },
     Achievements,
     RemindSetup { hour: u8, minute: u8, focus_field: TimeField },
@@ -120,6 +121,7 @@ impl App {
             AppState::MainMenu => self.handle_main_menu_key(key),
             AppState::Dashboard { .. } => self.handle_dashboard_key(key),
             AppState::UpdateProgress { .. } => self.handle_update_progress_key(key),
+            AppState::UpdateProgressConfirm { .. } => self.handle_update_progress_confirm_key(key),
             AppState::Practice { .. } => self.handle_practice_key(key),
             AppState::Achievements => self.handle_achievements_key(key),
             AppState::RemindSetup { .. } => self.handle_remind_setup_key(key),
@@ -200,7 +202,10 @@ impl App {
         if let AppState::Dashboard { ref mut selected_module } = self.state {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    self.pop_state();
+                    // 返回主菜单
+                    self.state = AppState::MainMenu;
+                    self.state_stack.clear();
+                    self.update_help_text();
                 }
                 KeyCode::Up => {
                     if *selected_module > 0 {
@@ -248,7 +253,14 @@ impl App {
         if let AppState::UpdateProgress { ref mut selected_module, ref mut selected_task, ref mut focus_area } = self.state {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    self.pop_state();
+                    // 返回仪表板
+                    if let Some(repo) = &self.repo {
+                        let module = *selected_module;
+                        self.state = AppState::Dashboard { selected_module: module };
+                    } else {
+                        self.state = AppState::MainMenu;
+                    }
+                    self.update_help_text();
                 }
                 KeyCode::Tab => {
                     *focus_area = match focus_area {
@@ -291,15 +303,68 @@ impl App {
                     }
                 }
                 KeyCode::Enter => {
-                    if let Some(repo) = &self.repo {
-                        if let Some(module) = repo.modules.get(*selected_module) {
-                            let task_names = ["concept", "examples", "exercises", "project", "checklist"];
-                            let task = task_names.get(*selected_task).unwrap_or(&"concept");
-                            let _ = crate::progress::update_task_status(repo, &module.id, task);
-                            self.message = Some(format!("✅ 已更新 {} 的 {} 任务", module.name,
-                                ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(*selected_task).unwrap_or(&"")));
+                    // 进入确认界面
+                    let module = *selected_module;
+                    let task = *selected_task;
+                    self.state = AppState::UpdateProgressConfirm {
+                        selected_module: module,
+                        selected_task: task,
+                        confirmed: false,
+                    };
+                    self.update_help_text();
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// 更新进度确认按键处理
+    fn handle_update_progress_confirm_key(&mut self, key: KeyCode) {
+        if let AppState::UpdateProgressConfirm { ref mut selected_module, ref mut selected_task, ref mut confirmed } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    // 返回更新进度界面
+                    let module = *selected_module;
+                    let task = *selected_task;
+                    self.state = AppState::UpdateProgress {
+                        selected_module: module,
+                        selected_task: task,
+                        focus_area: FocusArea::TaskList,
+                    };
+                    self.update_help_text();
+                }
+                KeyCode::Left => {
+                    *confirmed = false;
+                }
+                KeyCode::Right | KeyCode::Tab => {
+                    *confirmed = true;
+                }
+                KeyCode::Enter => {
+                    if *confirmed {
+                        // 确认保存
+                        if let Some(repo) = &self.repo {
+                            if let Some(module) = repo.modules.get(*selected_module) {
+                                let task_names = ["concept", "examples", "exercises", "project", "checklist"];
+                                let task = task_names.get(*selected_task).unwrap_or(&"concept");
+                                let _ = crate::progress::update_task_status(repo, &module.id, task);
+                                self.message = Some(format!("✅ 已更新 {} 的 {} 任务", module.name,
+                                    ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(*selected_task).unwrap_or(&"")));
+                            }
                         }
+                        // 返回仪表板
+                        let module = *selected_module;
+                        self.state = AppState::Dashboard { selected_module: module };
+                    } else {
+                        // 取消，返回更新进度界面
+                        let module = *selected_module;
+                        let task = *selected_task;
+                        self.state = AppState::UpdateProgress {
+                            selected_module: module,
+                            selected_task: task,
+                            focus_area: FocusArea::TaskList,
+                        };
                     }
+                    self.update_help_text();
                 }
                 _ => {}
             }
@@ -311,7 +376,14 @@ impl App {
         if let AppState::Practice { ref mut selected_module, ref mut question_count, ref mut focus_field } = self.state {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    self.pop_state();
+                    // 返回仪表板
+                    if let Some(repo) = &self.repo {
+                        let module = *selected_module;
+                        self.state = AppState::Dashboard { selected_module: module };
+                    } else {
+                        self.state = AppState::MainMenu;
+                    }
+                    self.update_help_text();
                 }
                 KeyCode::Tab => {
                     *focus_field = match focus_field {
@@ -368,7 +440,10 @@ impl App {
     fn handle_achievements_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
+                // 返回主菜单
+                self.state = AppState::MainMenu;
+                self.state_stack.clear();
+                self.update_help_text();
             }
             _ => {}
         }
@@ -379,7 +454,10 @@ impl App {
         if let AppState::RemindSetup { ref mut hour, ref mut minute, ref mut focus_field } = self.state {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    self.pop_state();
+                    // 返回主菜单
+                    self.state = AppState::MainMenu;
+                    self.state_stack.clear();
+                    self.update_help_text();
                 }
                 KeyCode::Tab => {
                     *focus_field = match focus_field {
@@ -402,7 +480,10 @@ impl App {
                 KeyCode::Enter => {
                     let _ = crate::notify::set_reminder(*hour, *minute);
                     self.message = Some(format!("⏰ 已设置提醒时间为 {:02}:{:02}", hour, minute));
-                    self.pop_state();
+                    // 返回主菜单
+                    self.state = AppState::MainMenu;
+                    self.state_stack.clear();
+                    self.update_help_text();
                 }
                 _ => {}
             }
@@ -413,7 +494,10 @@ impl App {
     fn handle_export_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
-                self.pop_state();
+                // 返回主菜单
+                self.state = AppState::MainMenu;
+                self.state_stack.clear();
+                self.update_help_text();
             }
             KeyCode::Enter => {
                 let _ = crate::storage::export_data();
@@ -446,8 +530,9 @@ impl App {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
             AppState::Dashboard { .. } => "↑↓ 选择模块 | Enter 更新进度 | U 更新 | P 练习 | Esc 返回".to_string(),
             AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回仪表板".to_string(),
+            AppState::UpdateProgressConfirm { .. } => "←→ 选择 | Enter 确认 | Esc 返回".to_string(),
             AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回仪表板".to_string(),
-            AppState::Achievements => "Esc 返回".to_string(),
+            AppState::Achievements => "Esc 返回主菜单".to_string(),
             AppState::RemindSetup { .. } => "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
             AppState::Export => "Enter 导出 | Esc 返回".to_string(),
         };
@@ -528,6 +613,9 @@ fn ui(f: &mut Frame, app: &mut App) {
         AppState::Dashboard { .. } => draw_dashboard(f, chunks[1], app),
         AppState::UpdateProgress { selected_module, selected_task, focus_area } => {
             draw_update_progress(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
+        }
+        AppState::UpdateProgressConfirm { selected_module, selected_task, confirmed } => {
+            draw_update_progress_confirm(f, chunks[1], app, *selected_module, *selected_task, *confirmed);
         }
         AppState::Practice { selected_module, question_count, focus_field } => {
             draw_practice(f, chunks[1], app, *selected_module, *question_count, *focus_field);
@@ -966,4 +1054,56 @@ fn draw_export(f: &mut Frame, area: Rect) {
         .alignment(Alignment::Center);
 
     f.render_widget(paragraph, area);
+}
+
+/// 绘制更新进度确认界面
+fn draw_update_progress_confirm(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, confirmed: bool) {
+    if let Some(repo) = &app.repo {
+        if let Some(module) = repo.modules.get(selected_module) {
+            let task_names = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
+            let task_name = task_names.get(selected_task).unwrap_or(&"任务");
+
+            let yes_style = if confirmed {
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+
+            let no_style = if !confirmed {
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+
+            let text = vec![
+                Line::from("✅ 确认更新进度"),
+                Line::from(""),
+                Line::from(""),
+                Line::from(format!("模块: {}", module.name)),
+                Line::from(format!("任务: {}", task_name)),
+                Line::from(""),
+                Line::from(""),
+                Line::from("确认要标记为已完成吗？"),
+                Line::from(""),
+                Line::from(""),
+                Line::from(vec![
+                    Span::raw("  [ "),
+                    Span::styled("是 (Y)", yes_style),
+                    Span::raw(" ]    "),
+                    Span::raw("[ "),
+                    Span::styled("否 (N)", no_style),
+                    Span::raw(" ]  "),
+                ]),
+                Line::from(""),
+                Line::from("操作: ←→ 选择 | Enter 确认 | Esc 返回"),
+            ];
+
+            let paragraph = Paragraph::new(text)
+                .block(Block::default().borders(Borders::ALL).title("确认"))
+                .wrap(Wrap { trim: true })
+                .alignment(Alignment::Center);
+
+            f.render_widget(paragraph, area);
+        }
+    }
 }
