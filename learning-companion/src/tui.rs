@@ -262,7 +262,7 @@ impl App {
                     }
                     self.update_help_text();
                 }
-                KeyCode::Tab => {
+                KeyCode::Tab | KeyCode::Char(' ') => {
                     *focus_area = match focus_area {
                         FocusArea::ModuleList => FocusArea::TaskList,
                         FocusArea::TaskList => FocusArea::ModuleList,
@@ -336,7 +336,7 @@ impl App {
                 KeyCode::Left => {
                     *confirmed = false;
                 }
-                KeyCode::Right | KeyCode::Tab => {
+                KeyCode::Right | KeyCode::Tab | KeyCode::Char(' ') => {
                     *confirmed = true;
                 }
                 KeyCode::Enter => {
@@ -855,7 +855,7 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
             ];
 
             let mut task_lines = vec![
-                Line::from("选择要标记完成的任务:"),
+                Line::from(format!("当前模块: {}", module.name)),
                 Line::from(""),
             ];
 
