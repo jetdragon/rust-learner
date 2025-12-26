@@ -27,6 +27,7 @@ use crate::repo::{LearningRepo, ModuleProgress};
 pub enum AppState {
     MainMenu,
     Dashboard { selected_module: usize },
+    ModuleDetail { selected_module: usize, selected_task: usize, focus_area: ModuleFocus },
     UpdateProgress { selected_module: usize, selected_task: usize, focus_area: FocusArea },
     UpdateProgressConfirm { selected_module: usize, selected_task: usize, confirmed: bool },
     Practice { selected_module: usize, question_count: usize, focus_field: PracticeField },
@@ -54,6 +55,13 @@ pub enum TimeField {
 pub enum PracticeField {
     Module,
     Count,
+}
+
+/// 模块详情焦点区域
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ModuleFocus {
+    TaskList,
+    Action,
 }
 
 /// 主应用结构
@@ -120,6 +128,7 @@ impl App {
         match self.state {
             AppState::MainMenu => self.handle_main_menu_key(key),
             AppState::Dashboard { .. } => self.handle_dashboard_key(key),
+            AppState::ModuleDetail { .. } => self.handle_module_detail_key(key),
             AppState::UpdateProgress { .. } => self.handle_update_progress_key(key),
             AppState::UpdateProgressConfirm { .. } => self.handle_update_progress_confirm_key(key),
             AppState::Practice { .. } => self.handle_practice_key(key),
@@ -243,9 +252,112 @@ impl App {
                     // 查看成就
                     self.push_state(AppState::Achievements);
                 }
+                KeyCode::Char('o') | KeyCode::Char('O') => {
+                    // 进入模块详情界面
+                    let module = *selected_module;
+                    self.state = AppState::ModuleDetail {
+                        selected_module: module,
+                        selected_task: 0,
+                        focus_area: ModuleFocus::TaskList,
+                    };
+                    self.update_help_text();
+                }
                 _ => {}
             }
         }
+    }
+
+    /// 模块详情按键处理
+    fn handle_module_detail_key(&mut self, key: KeyCode) {
+        if let AppState::ModuleDetail { ref mut selected_module, ref mut selected_task, ref mut focus_area } = self.state {
+            match key {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    // 返回仪表板
+                    if let Some(repo) = &self.repo {
+                        let module = *selected_module;
+                        self.state = AppState::Dashboard { selected_module: module };
+                    } else {
+                        self.state = AppState::MainMenu;
+                    }
+                    self.update_help_text();
+                }
+                KeyCode::Tab => {
+                    *focus_area = match focus_area {
+                        ModuleFocus::TaskList => ModuleFocus::Action,
+                        ModuleFocus::Action => ModuleFocus::TaskList,
+                    };
+                }
+                KeyCode::Up => {
+                    if let Some(repo) = &self.repo {
+                        match focus_area {
+                            ModuleFocus::TaskList => {
+                                if *selected_task > 0 {
+                                    *selected_task -= 1;
+                                }
+                            }
+                            ModuleFocus::Action => {
+                                if *selected_task > 0 {
+                                    *selected_task -= 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(repo) = &self.repo {
+                        match focus_area {
+                            ModuleFocus::TaskList => {
+                                if *selected_task < 4 {
+                                    *selected_task += 1;
+                                }
+                            }
+                            ModuleFocus::Action => {
+                                if *selected_task < 4 {
+                                    *selected_task += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char('o') | KeyCode::Char('O') => {
+                    // 打开当前任务对应的文件
+                    if let Some(repo) = &self.repo {
+                        if let Some(module) = repo.modules.get(*selected_module) {
+                            let task_files = ["README.md", "examples", "exercises.md", "tests", "自检清单.md"];
+                            if let Some(file) = task_files.get(*selected_task) {
+                                let path = module.directory.join(file);
+                                let _ = self.open_in_vscode(&path);
+                                self.message = Some(format!("📂 正在打开: {}", file));
+                            }
+                        }
+                    }
+                }
+                KeyCode::Char(' ') | KeyCode::Enter => {
+                    // 标记任务完成
+                    if let Some(repo) = &self.repo {
+                        if let Some(module) = repo.modules.get(*selected_module) {
+                            let task_names = ["concept", "examples", "exercises", "project", "checklist"];
+                            let task = task_names.get(*selected_task).unwrap_or(&"concept");
+                            let _ = crate::progress::update_task_status(repo, &module.id, task);
+                            let task_cn = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
+                            self.message = Some(format!("✅ 已完成: {}", task_cn.get(*selected_task).unwrap_or(&"")));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// 使用 VSCode 打开文件或目录
+    fn open_in_vscode(&self, path: &std::path::Path) -> Result<()> {
+        let path_str = path.to_string_lossy();
+        std::process::Command::new("code")
+            .arg("-r")
+            .arg(&*path_str)
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| anyhow::anyhow!("Failed to open VSCode: {}", e))
     }
 
     /// 更新进度按键处理
@@ -528,7 +640,8 @@ impl App {
     fn update_help_text(&mut self) {
         self.help_text = match self.state {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
-            AppState::Dashboard { .. } => "↑↓ 选择模块 | Enter 更新进度 | U 更新 | P 练习 | Esc 返回".to_string(),
+            AppState::Dashboard { .. } => "↑↓ 选择模块 | O 打开详情 | Enter 更新 | P 练习 | Esc 返回".to_string(),
+            AppState::ModuleDetail { .. } => "↑↓ 选择任务 | O 打开文件 | Space 标记完成 | Tab 切换 | Esc 返回".to_string(),
             AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回仪表板".to_string(),
             AppState::UpdateProgressConfirm { .. } => "←→ 选择 | Enter 确认 | Esc 返回".to_string(),
             AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回仪表板".to_string(),
@@ -611,6 +724,9 @@ fn ui(f: &mut Frame, app: &mut App) {
     match &app.state {
         AppState::MainMenu => draw_main_menu(f, chunks[1], app),
         AppState::Dashboard { .. } => draw_dashboard(f, chunks[1], app),
+        AppState::ModuleDetail { selected_module, selected_task, focus_area } => {
+            draw_module_detail(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
+        }
         AppState::UpdateProgress { selected_module, selected_task, focus_area } => {
             draw_update_progress(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
         }
@@ -776,17 +892,17 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
                 0
             };
 
-            let prefix = if i == selected_module { ">> " } else { "   " };
             module_items.push(ListItem::new(format!(
-                "{}{} {} - {}/5 任务",
-                prefix, status_icon, module.name, tasks_done
+                "{} {} - {}/5 任务",
+                status_icon, module.name, tasks_done
             )));
         }
 
         let module_list = List::new(module_items)
             .block(Block::default().borders(Borders::ALL).title("学习模块 (↑↓ 选择)"))
             .style(Style::default().fg(Color::White))
-            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD));
+            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+            .highlight_symbol(">> ");
 
         let mut list_state = ListState::default();
         list_state.select(Some(selected_module));
@@ -805,6 +921,111 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
     }
 }
 
+/// 绘制模块详情界面
+fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, focus_area: ModuleFocus) {
+    if let Some(repo) = &app.repo {
+        if let Some(module) = repo.modules.get(selected_module) {
+            let progress = repo.get_module_progress(&module.id);
+
+            // 创建布局：左侧任务列表，右侧文件信息
+            let chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
+                .split(area);
+
+            // 任务列表
+            let task_names = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
+            let task_getters: [fn(&ModuleProgress) -> bool; 5] = [
+                |p| p.concept,
+                |p| p.examples,
+                |p| p.exercises,
+                |p| p.project,
+                |p| p.checklist,
+            ];
+
+            let mut task_items = Vec::new();
+            for (i, task_name) in task_names.iter().enumerate() {
+                let is_done = if let Some(p) = progress {
+                    task_getters[i](p)
+                } else {
+                    false
+                };
+                let status = if is_done { 'x' } else { ' ' };
+                task_items.push(ListItem::new(format!("[{}] {}", status, task_name)));
+            }
+
+            let task_list = List::new(task_items)
+                .block(Block::default().borders(Borders::ALL).title("任务列表"))
+                .style(Style::default().fg(Color::White))
+                .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+                .highlight_symbol(">> ");
+
+            let mut task_list_state = ListState::default();
+            if focus_area == ModuleFocus::TaskList {
+                task_list_state.select(Some(selected_task));
+            }
+            f.render_stateful_widget(task_list, chunks[0], &mut task_list_state);
+
+            // 文件信息区域
+            let mut file_info_lines = vec![
+                Line::from("📁 模块文件"),
+                Line::from(""),
+                Line::from(format!("路径: {}", module.directory.display())),
+                Line::from(""),
+            ];
+
+            // 添加文件可用性信息
+            let file_names = ["README.md", "examples/", "exercises.md", "tests/", "自检清单.md"];
+            let file_status = [
+                module.has_readme,
+                true, // examples always exists as directory
+                module.has_exercises,
+                module.has_tests,
+                module.has_checklist,
+            ];
+
+            for (i, file_name) in file_names.iter().enumerate() {
+                let exists = file_status[i];
+                let icon = if exists { "✅" } else { "❌" };
+                let style = if exists {
+                    Style::default().fg(Color::Green)
+                } else {
+                    Style::default().fg(Color::DarkGray)
+                };
+                file_info_lines.push(Line::from(vec![
+                    Span::styled(format!("{} ", icon), style),
+                    Span::styled(*file_name, style),
+                ]));
+            }
+
+            // 操作提示
+            let action_style = if focus_area == ModuleFocus::Action {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Gray)
+            };
+
+            file_info_lines.push(Line::from(""));
+            file_info_lines.push(Line::from("---"));
+            file_info_lines.push(Line::from("操作:"));
+            file_info_lines.push(Line::from(vec![
+                Span::raw("  [O] 打开文件  "),
+                Span::styled("[Space] 标记完成", action_style),
+            ]));
+
+            // 当前选中任务的操作提示
+            let current_task = task_names.get(selected_task).unwrap_or(&"未知");
+            file_info_lines.push(Line::from(""));
+            file_info_lines.push(Line::from(format!("当前: {}", current_task)));
+
+            let file_info = Paragraph::new(file_info_lines)
+                .block(Block::default().borders(Borders::ALL).title("文件与操作"))
+                .wrap(Wrap { trim: true });
+            f.render_widget(file_info, chunks[1]);
+        }
+    }
+}
+
 /// 绘制更新进度界面
 fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, focus_area: FocusArea) {
     if let Some(repo) = &app.repo {
@@ -817,12 +1038,7 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
         // 模块列表
         let mut module_items = Vec::new();
         for (i, module) in repo.modules.iter().enumerate() {
-            let prefix = if i == selected_module && focus_area == FocusArea::ModuleList {
-                ">> "
-            } else {
-                "   "
-            };
-            module_items.push(ListItem::new(format!("{}{}", prefix, module.name)));
+            module_items.push(ListItem::new(module.name.clone()));
         }
 
         let module_border_style = if focus_area == FocusArea::ModuleList {
@@ -833,8 +1049,15 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
 
         let module_list = List::new(module_items)
             .block(Block::default().borders(Borders::ALL).title("选择模块").border_style(module_border_style))
-            .style(Style::default().fg(Color::White));
-        f.render_widget(module_list, chunks[0]);
+            .style(Style::default().fg(Color::White))
+            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+            .highlight_symbol(">> ");
+
+        let mut module_list_state = ListState::default();
+        if focus_area == FocusArea::ModuleList {
+            module_list_state.select(Some(selected_module));
+        }
+        f.render_stateful_widget(module_list, chunks[0], &mut module_list_state);
 
         // 任务列表
         if let Some(module) = repo.modules.get(selected_module) {
@@ -854,35 +1077,31 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
                 |p| p.checklist,
             ];
 
-            let mut task_lines = vec![
-                Line::from(format!("当前模块: {}", module.name)),
-                Line::from(""),
-            ];
-
+            let mut task_items = Vec::new();
             for (i, task_name) in task_names.iter().enumerate() {
                 let is_done = if let Some(p) = progress {
                     task_getters[i](p)
                 } else {
                     false
                 };
-                let is_selected = i == selected_task && focus_area == FocusArea::TaskList;
-                let marker = if is_selected { ">> " } else { "   " };
-
-                task_lines.push(Line::from(format!(
-                    "{}[{}] {}",
-                    marker,
+                task_items.push(ListItem::new(format!(
+                    "[{}] {}",
                     if is_done { 'x' } else { ' ' },
                     task_name
                 )));
             }
 
-            task_lines.push(Line::from(""));
-            task_lines.push(Line::from("操作: ↑↓ 选择 | Tab 切换 | Enter 确认"));
+            let task_list = List::new(task_items)
+                .block(Block::default().borders(Borders::ALL).title(format!("任务列表 - {}", module.name)).border_style(border_style))
+                .style(Style::default().fg(Color::White))
+                .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+                .highlight_symbol(">> ");
 
-            let task_paragraph = Paragraph::new(task_lines)
-                .block(Block::default().borders(Borders::ALL).title("任务列表").border_style(border_style))
-                .wrap(Wrap { trim: true });
-            f.render_widget(task_paragraph, chunks[1]);
+            let mut task_list_state = ListState::default();
+            if focus_area == FocusArea::TaskList {
+                task_list_state.select(Some(selected_task));
+            }
+            f.render_stateful_widget(task_list, chunks[1], &mut task_list_state);
         }
     }
 }
