@@ -13,7 +13,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Gauge, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
     Frame, Terminal,
 };
 use std::io;
@@ -801,6 +801,15 @@ fn draw_size_warning(f: &mut Frame, area: Rect) {
     f.render_widget(warning, area);
 }
 
+/// 生成文本进度条
+fn generate_progress_bar(percent: u16, width: u16) -> String {
+    let filled = (percent as u32 * width as u32 + 50) / 100; // 四舍五入
+    let empty = width as u32 - filled;
+    let fill_char = "█";
+    let empty_char = "░";
+    format!("[{}{}] {}%", fill_char.repeat(filled as usize), empty_char.repeat(empty as usize), percent)
+}
+
 /// 绘制主菜单
 fn draw_main_menu(f: &mut Frame, area: Rect, app: &mut App) {
     let items: Vec<ListItem> = app
@@ -838,35 +847,26 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         // 创建垂直布局
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Length(10), Constraint::Min(0)].as_ref())
+            .constraints([Constraint::Length(9), Constraint::Min(0)].as_ref())
             .split(area);
+
+        // 生成文本进度条
+        let progress_bar = generate_progress_bar(completion as u16, 20);
 
         // 顶部统计区域
         let stats_lines = vec![
             Line::from("📊 学习进度仪表板"),
             Line::from(""),
             Line::from(format!("总体完成度: {:.1}% ({}/{})", completion, completed, total)),
+            Line::from(progress_bar),
             Line::from(""),
-            Line::from("快捷键: ↑↓ 选择模块 | Enter/U 更新进度 | P 练习 | A 成就"),
+            Line::from("快捷键: ↑↓ 选择模块 | O 详情 | P 练习 | A 成就"),
         ];
 
         let stats = Paragraph::new(stats_lines)
             .block(Block::default().borders(Borders::ALL).title("统计"))
             .wrap(Wrap { trim: true });
         f.render_widget(stats, chunks[0]);
-
-        // 进度条
-        let gauge_area = Rect {
-            x: chunks[0].x + 2,
-            y: chunks[0].y + 7,
-            width: chunks[0].width.saturating_sub(4),
-            height: 1,
-        };
-        let gauge = Gauge::default()
-            .block(Block::default().borders(Borders::ALL))
-            .gauge_style(Style::default().fg(Color::Green))
-            .percent(completion as u16);
-        f.render_widget(gauge, gauge_area);
 
         // 模块列表 - 可选择
         let mut module_items = Vec::new();
