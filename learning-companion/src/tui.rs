@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -682,7 +682,10 @@ pub fn run_tui(project_path: &str) -> Result<()> {
         // 读取事件（超时 100ms）
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
-                app.handle_key(key.code)?;
+                // 只处理按键按下事件，忽略按键释放事件（Windows 会报告两种事件）
+                if key.kind == KeyEventKind::Press {
+                    app.handle_key(key.code)?;
+                }
             }
         }
     }
