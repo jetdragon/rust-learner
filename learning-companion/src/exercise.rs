@@ -7,7 +7,7 @@ use anyhow::Result;
 use rand::seq::SliceRandom;
 
 /// 练习题目
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Question {
     pub question_type: QuestionType,
     pub prompt: String,
@@ -17,7 +17,7 @@ pub struct Question {
     pub topic: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum QuestionType {
     MultipleChoice,
     TrueFalse,

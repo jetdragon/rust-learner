@@ -16,7 +16,15 @@
       "Bash(openspec show:*)",
       "Bash(ls:*)",
       "Bash(cargo clean:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(Enter/U 更新进度)",
+      "Bash(P 练习)",
+      "Bash(A 成就\"\n- 更新进度: \"Esc 返回仪表板\"\n- 练习: \"Esc 返回仪表板\"\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cargo add:*)",
+      "Skill(openspec:apply)",
+      "Skill(openspec:apply:*)",
+      "Bash(dir:*)",
+      "Bash(\"\\) 方式\n- 修复主菜单、仪表板、更新进度、模块详情界面的方向键跳行\n- 修复 Tab 键在左右两栏界面切换焦点问题\n- 简化 widgets import\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
