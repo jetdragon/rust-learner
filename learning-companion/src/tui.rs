@@ -13,7 +13,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
 };
 use std::io;
@@ -812,22 +812,24 @@ fn generate_progress_bar(percent: u16, width: u16) -> String {
 
 /// 绘制主菜单
 fn draw_main_menu(f: &mut Frame, area: Rect, app: &mut App) {
-    let items: Vec<ListItem> = app
-        .main_menu_items
-        .iter()
-        .map(|item| ListItem::new(item.as_str()))
-        .collect();
+    let mut menu_lines: Vec<Line> = Vec::new();
+    for (i, item) in app.main_menu_items.iter().enumerate() {
+        let prefix = if i == app.main_menu_selected { ">> " } else { "   " };
+        let style = if i == app.main_menu_selected {
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Color::White)
+        };
+        menu_lines.push(Line::from(vec![
+            Span::styled(prefix, style),
+            Span::styled(item.as_str(), style),
+        ]));
+    }
 
-    let list = List::new(items)
+    let menu_paragraph = Paragraph::new(menu_lines)
         .block(Block::default().borders(Borders::ALL).title("主菜单"))
-        .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-        .highlight_symbol(">> ");
-
-    let mut list_state = ListState::default();
-    list_state.select(Some(app.main_menu_selected));
-
-    f.render_stateful_widget(list, area, &mut list_state);
+        .wrap(Wrap { trim: true });
+    f.render_widget(menu_paragraph, area);
 }
 
 /// 绘制仪表板
@@ -869,7 +871,7 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         f.render_widget(stats, chunks[0]);
 
         // 模块列表 - 可选择
-        let mut module_items = Vec::new();
+        let mut module_lines: Vec<Line> = Vec::new();
         for (i, module) in repo.modules.iter().enumerate() {
             let progress = repo.get_module_progress(&module.id);
             let status_icon = if let Some(p) = progress {
@@ -892,22 +894,23 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
                 0
             };
 
-            module_items.push(ListItem::new(format!(
-                "{} {} - {}/5 任务",
-                status_icon, module.name, tasks_done
-            )));
+            let prefix = if i == selected_module { ">> " } else { "   " };
+            let content = format!("{} {} - {}/5 任务", status_icon, module.name, tasks_done);
+            let style = if i == selected_module {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            module_lines.push(Line::from(vec![
+                Span::styled(prefix, style),
+                Span::styled(content, style),
+            ]));
         }
 
-        let module_list = List::new(module_items)
+        let module_paragraph = Paragraph::new(module_lines)
             .block(Block::default().borders(Borders::ALL).title("学习模块 (↑↓ 选择)"))
-            .style(Style::default().fg(Color::White))
-            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-            .highlight_symbol(">> ");
-
-        let mut list_state = ListState::default();
-        list_state.select(Some(selected_module));
-
-        f.render_stateful_widget(module_list, chunks[1], &mut list_state);
+            .wrap(Wrap { trim: true });
+        f.render_widget(module_paragraph, chunks[1]);
     } else {
         let text = vec![
             Line::from("📊 学习仪表板"),
@@ -933,7 +936,7 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
                 .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
                 .split(area);
 
-            // 任务列表
+            // 任务列表 - 使用手动前缀
             let task_names = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
             let task_getters: [fn(&ModuleProgress) -> bool; 5] = [
                 |p| p.concept,
@@ -943,28 +946,30 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
                 |p| p.checklist,
             ];
 
-            let mut task_items = Vec::new();
+            let mut task_lines: Vec<Line> = Vec::new();
             for (i, task_name) in task_names.iter().enumerate() {
                 let is_done = if let Some(p) = progress {
                     task_getters[i](p)
                 } else {
                     false
                 };
-                let status = if is_done { 'x' } else { ' ' };
-                task_items.push(ListItem::new(format!("[{}] {}", status, task_name)));
+                let prefix = if i == selected_task && focus_area == ModuleFocus::TaskList { ">> " } else { "   " };
+                let content = format!("[{}] {}", if is_done { 'x' } else { ' ' }, task_name);
+                let style = if i == selected_task && focus_area == ModuleFocus::TaskList {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                task_lines.push(Line::from(vec![
+                    Span::styled(prefix, style),
+                    Span::styled(content, style),
+                ]));
             }
 
-            let task_list = List::new(task_items)
+            let task_paragraph = Paragraph::new(task_lines)
                 .block(Block::default().borders(Borders::ALL).title("任务列表"))
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-                .highlight_symbol(">> ");
-
-            let mut task_list_state = ListState::default();
-            if focus_area == ModuleFocus::TaskList {
-                task_list_state.select(Some(selected_task));
-            }
-            f.render_stateful_widget(task_list, chunks[0], &mut task_list_state);
+                .wrap(Wrap { trim: true });
+            f.render_widget(task_paragraph, chunks[0]);
 
             // 文件信息区域
             let mut file_info_lines = vec![
@@ -1035,31 +1040,33 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
             .split(area);
 
-        // 模块列表
-        let mut module_items = Vec::new();
-        for (i, module) in repo.modules.iter().enumerate() {
-            module_items.push(ListItem::new(module.name.clone()));
-        }
-
+        // 模块列表 - 使用手动前缀
         let module_border_style = if focus_area == FocusArea::ModuleList {
             Style::default().fg(Color::Yellow)
         } else {
             Style::default()
         };
 
-        let module_list = List::new(module_items)
-            .block(Block::default().borders(Borders::ALL).title("选择模块").border_style(module_border_style))
-            .style(Style::default().fg(Color::White))
-            .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-            .highlight_symbol(">> ");
-
-        let mut module_list_state = ListState::default();
-        if focus_area == FocusArea::ModuleList {
-            module_list_state.select(Some(selected_module));
+        let mut module_lines: Vec<Line> = Vec::new();
+        for (i, module) in repo.modules.iter().enumerate() {
+            let prefix = if i == selected_module && focus_area == FocusArea::ModuleList { ">> " } else { "   " };
+            let style = if i == selected_module && focus_area == FocusArea::ModuleList {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            module_lines.push(Line::from(vec![
+                Span::styled(prefix, style),
+                Span::styled(module.name.clone(), style),
+            ]));
         }
-        f.render_stateful_widget(module_list, chunks[0], &mut module_list_state);
 
-        // 任务列表
+        let module_paragraph = Paragraph::new(module_lines)
+            .block(Block::default().borders(Borders::ALL).title("选择模块").border_style(module_border_style))
+            .wrap(Wrap { trim: true });
+        f.render_widget(module_paragraph, chunks[0]);
+
+        // 任务列表 - 使用手动前缀
         if let Some(module) = repo.modules.get(selected_module) {
             let progress = repo.get_module_progress(&module.id);
             let border_style = if focus_area == FocusArea::TaskList {
@@ -1077,31 +1084,30 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
                 |p| p.checklist,
             ];
 
-            let mut task_items = Vec::new();
+            let mut task_lines: Vec<Line> = Vec::new();
             for (i, task_name) in task_names.iter().enumerate() {
                 let is_done = if let Some(p) = progress {
                     task_getters[i](p)
                 } else {
                     false
                 };
-                task_items.push(ListItem::new(format!(
-                    "[{}] {}",
-                    if is_done { 'x' } else { ' ' },
-                    task_name
-                )));
+                let prefix = if i == selected_task && focus_area == FocusArea::TaskList { ">> " } else { "   " };
+                let content = format!("[{}] {}", if is_done { 'x' } else { ' ' }, task_name);
+                let style = if i == selected_task && focus_area == FocusArea::TaskList {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                task_lines.push(Line::from(vec![
+                    Span::styled(prefix, style),
+                    Span::styled(content, style),
+                ]));
             }
 
-            let task_list = List::new(task_items)
+            let task_paragraph = Paragraph::new(task_lines)
                 .block(Block::default().borders(Borders::ALL).title(format!("任务列表 - {}", module.name)).border_style(border_style))
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
-                .highlight_symbol(">> ");
-
-            let mut task_list_state = ListState::default();
-            if focus_area == FocusArea::TaskList {
-                task_list_state.select(Some(selected_task));
-            }
-            f.render_stateful_widget(task_list, chunks[1], &mut task_list_state);
+                .wrap(Wrap { trim: true });
+            f.render_widget(task_paragraph, chunks[1]);
         }
     }
 }
