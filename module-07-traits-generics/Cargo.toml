@@ -1,0 +1,7 @@
+[package]
+name = "module-07-traits-generics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
