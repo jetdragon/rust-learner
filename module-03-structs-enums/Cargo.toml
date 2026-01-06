@@ -4,3 +4,43 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+
+[[bin]]
+name = "exercise1_book_struct"
+path = "exercises/exercise1_book_struct.rs"
+
+[[bin]]
+name = "exercise2_rectangle_methods"
+path = "exercises/exercise2_rectangle_methods.rs"
+
+[[bin]]
+name = "exercise3_traffic_light"
+path = "exercises/exercise3_traffic_light.rs"
+
+[[bin]]
+name = "exercise4_shape_area"
+path = "exercises/exercise4_shape_area.rs"
+
+[[bin]]
+name = "exercise5_option_type"
+path = "exercises/exercise5_option_type.rs"
+
+[[bin]]
+name = "exercise6_result_type"
+path = "exercises/exercise6_result_type.rs"
+
+[[bin]]
+name = "exercise7_match_exhaustiveness"
+path = "exercises/exercise7_match_exhaustiveness.rs"
+
+[[bin]]
+name = "exercise8_if_let"
+path = "exercises/exercise8_if_let.rs"
+
+[[bin]]
+name = "exercise9_nested_structs"
+path = "exercises/exercise9_nested_structs.rs"
+
+[[bin]]
+name = "exercise10_blog_post"
+path = "exercises/exercise10_blog_post.rs"
