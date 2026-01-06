@@ -4,3 +4,27 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+
+[[bin]]
+name = "exercise1_ownership_transfer"
+path = "exercises/exercise1_ownership_transfer.rs"
+
+[[bin]]
+name = "exercise2_function_ownership"
+path = "exercises/exercise2_function_ownership.rs"
+
+[[bin]]
+name = "exercise3_references"
+path = "exercises/exercise3_references.rs"
+
+[[bin]]
+name = "exercise4_mutable_reference"
+path = "exercises/exercise4_mutable_reference.rs"
+
+[[bin]]
+name = "exercise5_borrow_rules"
+path = "exercises/exercise5_borrow_rules.rs"
+
+[[bin]]
+name = "exercise6_string_slice"
+path = "exercises/exercise6_string_slice.rs"
