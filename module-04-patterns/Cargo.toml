@@ -4,3 +4,43 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+
+[[bin]]
+name = "exercise1_basic_match"
+path = "exercises/exercise1_basic_match.rs"
+
+[[bin]]
+name = "exercise2_match_option"
+path = "exercises/exercise2_match_option.rs"
+
+[[bin]]
+name = "exercise3_destruct_struct"
+path = "exercises/exercise3_destruct_struct.rs"
+
+[[bin]]
+name = "exercise4_match_enum"
+path = "exercises/exercise4_match_enum.rs"
+
+[[bin]]
+name = "exercise5_match_guards"
+path = "exercises/exercise5_match_guards.rs"
+
+[[bin]]
+name = "exercise6_at_binding"
+path = "exercises/exercise6_at_binding.rs"
+
+[[bin]]
+name = "exercise7_ignore_values"
+path = "exercises/exercise7_ignore_values.rs"
+
+[[bin]]
+name = "exercise8_if_let"
+path = "exercises/exercise8_if_let.rs"
+
+[[bin]]
+name = "exercise9_while_let"
+path = "exercises/exercise9_while_let.rs"
+
+[[bin]]
+name = "exercise10_nested_destruct"
+path = "exercises/exercise10_nested_destruct.rs"
