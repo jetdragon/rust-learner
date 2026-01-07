@@ -513,10 +513,13 @@ impl App {
                     self.update_help_text();
                 }
                 KeyCode::Left => {
-                    *confirmed = false;
+                    *confirmed = true;   // Left key selects "Yes" (left option)
                 }
-                KeyCode::Right | KeyCode::Tab | KeyCode::Char(' ') => {
-                    *confirmed = true;
+                KeyCode::Right => {
+                    *confirmed = false;  // Right key selects "No" (right option)
+                }
+                KeyCode::Tab | KeyCode::Char(' ') => {
+                    *confirmed = true;   // Tab and Space still select "Yes"
                 }
                 KeyCode::Enter => {
                     if *confirmed {
