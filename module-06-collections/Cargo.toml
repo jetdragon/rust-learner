@@ -4,3 +4,43 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+
+[[bin]]
+name = "exercise1_vec_basics"
+path = "exercises/exercise1_vec_basics.rs"
+
+[[bin]]
+name = "exercise2_hashmap_basics"
+path = "exercises/exercise2_hashmap_basics.rs"
+
+[[bin]]
+name = "exercise3_hashset"
+path = "exercises/exercise3_hashset.rs"
+
+[[bin]]
+name = "exercise4_vec_iterator"
+path = "exercises/exercise4_vec_iterator.rs"
+
+[[bin]]
+name = "exercise5_merge_maps"
+path = "exercises/exercise5_merge_maps.rs"
+
+[[bin]]
+name = "exercise6_vec_search"
+path = "exercises/exercise6_vec_search.rs"
+
+[[bin]]
+name = "exercise7_hashmap_convert"
+path = "exercises/exercise7_hashmap_convert.rs"
+
+[[bin]]
+name = "exercise8_set_operations"
+path = "exercises/exercise8_set_operations.rs"
+
+[[bin]]
+name = "exercise9_sort_group"
+path = "exercises/exercise9_sort_group.rs"
+
+[[bin]]
+name = "exercise10_btreemap"
+path = "exercises/exercise10_btreemap.rs"
