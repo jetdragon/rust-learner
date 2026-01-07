@@ -4,3 +4,43 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+
+[[bin]]
+name = "exercise1_result_basics"
+path = "exercises/exercise1_result_basics.rs"
+
+[[bin]]
+name = "exercise2_option_conversion"
+path = "exercises/exercise2_option_conversion.rs"
+
+[[bin]]
+name = "exercise3_square_root"
+path = "exercises/exercise3_square_root.rs"
+
+[[bin]]
+name = "exercise4_error_propagation"
+path = "exercises/exercise4_error_propagation.rs"
+
+[[bin]]
+name = "exercise5_chaining"
+path = "exercises/exercise5_chaining.rs"
+
+[[bin]]
+name = "exercise6_custom_error"
+path = "exercises/exercise6_custom_error.rs"
+
+[[bin]]
+name = "exercise7_unwrap_or"
+path = "exercises/exercise7_unwrap_or.rs"
+
+[[bin]]
+name = "exercise8_map_operator"
+path = "exercises/exercise8_map_operator.rs"
+
+[[bin]]
+name = "exercise9_combining_results"
+path = "exercises/exercise9_combining_results.rs"
+
+[[bin]]
+name = "exercise10_error_context"
+path = "exercises/exercise10_error_context.rs"
