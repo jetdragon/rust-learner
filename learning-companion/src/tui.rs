@@ -17,7 +17,7 @@ use ratatui::{
     Frame, Terminal,
 };
 use std::io;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 // 导入项目模块
 use crate::repo::{LearningRepo, ModuleProgress};
@@ -98,6 +98,8 @@ pub struct App {
     pub repo: Option<LearningRepo>,
     /// 消息提示
     pub message: Option<String>,
+    /// 消息超时时间点
+    message_deadline: Option<Instant>,
     /// 是否应该退出
     pub should_quit: bool,
     /// 项目路径
@@ -126,6 +128,7 @@ impl App {
             help_text: "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
             repo: None,
             message: None,
+            message_deadline: None,
             should_quit: false,
             project_path,
         }
@@ -139,11 +142,18 @@ impl App {
         Ok(())
     }
 
+    /// 显示临时消息（3秒后自动消失）
+    fn show_message(&mut self, msg: String) {
+        self.message = Some(msg);
+        self.message_deadline = Some(Instant::now() + Duration::from_secs(3));
+    }
+
     /// 处理按键事件
     pub fn handle_key(&mut self, key: KeyCode) -> Result<()> {
         // 清除之前的消息（除了某些特定按键）
         if !matches!(key, KeyCode::Char('o') | KeyCode::Char('O')) {
             self.message = None;
+            self.message_deadline = None;
         }
 
         match self.state {
@@ -177,7 +187,7 @@ impl App {
             }
             KeyCode::Enter => {
                 if let Err(e) = self.enter_main_menu_selection() {
-                    self.message = Some(format!("错误: {}", e));
+                    self.show_message(format!("错误: {}", e));
                 }
             }
             KeyCode::Char('q') | KeyCode::Esc => {
@@ -387,7 +397,7 @@ impl App {
                                             };
                                             self.update_help_text();
                                         } else {
-                                            self.message = Some(format!("❌ 无法读取文件: {}", file));
+                                            self.show_message(format!("❌ 无法读取文件: {}", file));
                                         }
                                     }
                                 }
@@ -529,8 +539,10 @@ impl App {
                                 let task_names = ["concept", "examples", "exercises", "project", "checklist"];
                                 let task = task_names.get(*selected_task).unwrap_or(&"concept");
                                 let _ = crate::progress::update_task_status(repo, &module.id, task);
-                                self.message = Some(format!("✅ 已更新 {} 的 {} 任务", module.name,
-                                    ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(*selected_task).unwrap_or(&"")));
+                                let module_name = module.name.clone();
+                                let task_idx = *selected_task;
+                                self.show_message(format!("✅ 已更新 {} 的 {} 任务", module_name,
+                                    ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(task_idx).unwrap_or(&"")));
                             }
                         }
                     }
@@ -604,7 +616,7 @@ impl App {
                                     crate::exercise::generate_basics_questions(*question_count)
                                 }
                                 _ => {
-                                    self.message = Some("❌ 暂不支持该模块的练习题".to_string());
+                                    self.show_message("❌ 暂不支持该模块的练习题".to_string());
                                     return;
                                 }
                             };
@@ -622,7 +634,7 @@ impl App {
                                 self.state = AppState::PracticeSession { session };
                                 self.update_help_text();
                             } else {
-                                self.message = Some("❌ 没有可用的练习题".to_string());
+                                self.show_message("❌ 没有可用的练习题".to_string());
                             }
                         }
                     }
@@ -675,7 +687,9 @@ impl App {
                 }
                 KeyCode::Enter => {
                     let _ = crate::notify::set_reminder(*hour, *minute);
-                    self.message = Some(format!("⏰ 已设置提醒时间为 {:02}:{:02}", hour, minute));
+                    let h = *hour;
+                    let m = *minute;
+                    self.show_message(format!("⏰ 已设置提醒时间为 {:02}:{:02}", h, m));
                     // 返回主菜单
                     self.state = AppState::MainMenu;
                     self.state_stack.clear();
@@ -697,7 +711,7 @@ impl App {
             }
             KeyCode::Enter => {
                 let _ = crate::storage::export_data();
-                self.message = Some("📤 数据导出完成！".to_string());
+                self.show_message("📤 数据导出完成！".to_string());
             }
             _ => {}
         }
@@ -771,10 +785,11 @@ impl App {
                             .count();
 
                         let score = (correct_count as f32 / session.questions.len() as f32) * 100.0;
-                        self.message = Some(format!(
+                        let total = session.questions.len();
+                        let msg = format!(
                             "✅ 练习完成！得分: {:.1}% ({}/{})",
-                            score, correct_count, session.questions.len()
-                        ));
+                            score, correct_count, total
+                        );
 
                         // 返回练习配置界面
                         self.state = AppState::Practice {
@@ -782,6 +797,10 @@ impl App {
                             question_count: 5,
                             focus_field: PracticeField::Module,
                         };
+                        self.update_help_text();
+
+                        // 显示消息（在状态切换后）
+                        self.show_message(msg);
                     } else {
                         session.current_index += 1;
                     }
@@ -836,6 +855,7 @@ impl App {
         self.state_stack.push(self.state.clone());
         self.state = new_state;
         self.message = None;
+        self.message_deadline = None;
         self.update_help_text();
     }
 
@@ -844,6 +864,7 @@ impl App {
         if let Some(prev_state) = self.state_stack.pop() {
             self.state = prev_state;
             self.message = None;
+            self.message_deadline = None;
             self.update_help_text();
         }
     }
@@ -885,6 +906,14 @@ pub fn run_tui(project_path: &str) -> Result<()> {
 
     // 主循环
     loop {
+        // 检查消息超时并自动清除
+        if let Some(deadline) = app.message_deadline {
+            if Instant::now() >= deadline {
+                app.message = None;
+                app.message_deadline = None;
+            }
+        }
+
         // 绘制界面
         terminal.draw(|f| ui(f, &mut app))?;
 
@@ -990,10 +1019,11 @@ fn draw_footer(f: &mut Frame, area: Rect, help_text: &str) {
 
 /// 绘制消息
 fn draw_message(f: &mut Frame, area: Rect, message: &str) {
-    let msg = Paragraph::new(Line::from(message.to_string()))
+    let msg = Paragraph::new(message.to_string())
         .alignment(Alignment::Center)
         .style(Style::default().fg(Color::Green))
-        .block(Block::default().borders(Borders::ALL).title("提示"));
+        .block(Block::default().borders(Borders::ALL).title("提示"))
+        .wrap(Wrap { trim: true }); // 支持文字自动换行
     f.render_widget(msg, area);
 }
 
