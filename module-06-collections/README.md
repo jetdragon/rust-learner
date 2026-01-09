@@ -174,5 +174,5 @@ A: String 拥有数据，可变；&str 是借用，不可变。函数参数常�
 
 完成本模块后，继续学习：
 
-- [module-07-traits](../module-07-traits/) - 泛型和 Trait
+- [module-07-traits-generics](../module-07-traits-generics/) - Trait 与泛型
 - [module-08-lifetimes](../module-08-lifetimes/) - 生命周期

@@ -269,4 +269,4 @@ A: `expect` 更好，因为它允许你提供错误消息，便于调试。只�
 完成本模块后，继续学习：
 
 - [module-06-collections](../module-06-collections/) - 集合类型
-- [module-07-traits](../module-07-traits/) - 泛型和 Trait
+- [module-07-traits-generics](../module-07-traits-generics/) - Trait 与泛型
