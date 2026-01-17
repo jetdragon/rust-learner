@@ -24,6 +24,7 @@ module-07-collections  → Vec、HashMap 等
 module-08-traits-generics → Trait 与泛型
 module-09-concurrency  → 线程与消息传递
 module-10-project      → 综合应用
+module-11-smart-pointers → 智能指针（新增！）
 ```
 
 ## 快速开始

@@ -10,6 +10,7 @@ members = [
     "module-08-traits-generics",
     "module-09-concurrency",
     "module-10-project",
+    "module-11-smart-pointers",
 ]
 exclude = [
     "learning-companion",

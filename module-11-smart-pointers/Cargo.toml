@@ -1,0 +1,6 @@
+[package]
+name = "module-11-smart-pointers"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
