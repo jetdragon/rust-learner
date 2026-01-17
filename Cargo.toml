@@ -11,6 +11,7 @@ members = [
     "module-09-concurrency",
     "module-10-project",
     "module-11-smart-pointers",
+    "module-12-iterators",
 ]
 exclude = [
     "learning-companion",
