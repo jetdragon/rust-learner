@@ -184,7 +184,133 @@ pub fn read_config_value(path: &str, key: &str) -> Result<String, String> {
 3. 使用 `unwrap_or`, `unwrap_or_else` 提供默认值
 4. 使用 `map`, `and_then`, `or_else` 链式操作
 5. 自定义错误类型应该实现 `Debug` 和 `Display`
+6. 使用 `map_err()` 添加错误上下文
+7. 为自定义错误实现 `From` trait 简化错误转换
 
 ## 答案
 
 查看 [src/lib.rs](src/lib.rs) 中的实现和测试。
+
+### 练习 11: Result 基础操作
+
+实现以下 Result 操作函数：
+
+```rust
+pub fn map_result_option(opt: Option<i32>) -> Result<i32, String> {
+    todo!()
+}
+
+pub fn combine_results(a: Result<i32, String>, b: Result<i32, String>) -> Result<(i32, i32), String> {
+    todo!()
+}
+
+pub fn unwrap_or_default(result: Result<i32, String>) -> i32 {
+    todo!()
+}
+
+pub fn and_then_option(r: Result<i32, String>) -> Option<i32> {
+    // 如果 Result 是 Ok，返回 Some(value)，否则返回 None
+    todo!()
+}
+```
+
+### 练习 12: 自定义错误类型与 From trait
+
+定义自定义错误类型并实现 From trait：
+
+```rust
+#[derive(Debug, PartialEq)]
+pub enum AppError {
+    InvalidInput(String),
+    ConversionError(String),
+    IoError(String),
+}
+
+impl AppError {
+    pub fn description(&self) -> &str {
+        match self {
+            AppError::InvalidInput(msg) => msg,
+            AppError::ConversionError(msg) => msg,
+            AppError::IoError(msg) => msg,
+        }
+    }
+}
+
+// 实现 std::error::Error trait（需要 std::fmt::Display）
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.description())
+    }
+}
+
+impl std::error::Error for AppError {}
+
+// 实现 From trait
+impl From<std::num::ParseIntError> for AppError {
+    fn from(err: std::num::ParseIntError) -> Self {
+        AppError::ConversionError(err.to_string())
+    }
+}
+
+pub fn parse_int(s: &str) -> Result<i32, AppError> {
+    s.parse().map_err(AppError::from)
+}
+```
+
+### 练习 13: 错误链（Error Chaining）
+
+使用 map_err 添加错误上下文：
+
+```rust
+pub struct Config {
+    pub host: String,
+    pub port: u16,
+}
+
+pub fn parse_config(host_str: &str, port_str: &str) -> Result<Config, String> {
+    // 1. 解析 host（可能为空）
+    let host = if host_str.is_empty() {
+        return Err("host 不能为空".to_string());
+    } else {
+        host_str.to_string()
+    };
+
+    // 2. 解析 port（可能解析失败）
+    let port: u16 = port_str.parse().map_err(|e| {
+        format!("无法解析 port: {}", e)
+    })?;
+
+    // 3. 添加更多上下文
+    Ok(Config { host, port })
+}
+
+pub fn parse_config_with_context(host_str: &str, port_str: &str) -> Result<Config, String> {
+    let host = if host_str.is_empty() {
+        return Err("host 不能为空".to_string());
+    } else {
+        host_str.to_string()
+    };
+
+    // 使用 map_err 添加上下文
+    let port: u16 = port_str.parse().map_err(|e| {
+        format!("解析配置失败: host='{}', port='{}', 错误: {}", host_str, port_str, e)
+    })?;
+
+    Ok(Config { host, port })
+}
+```
+
+## 提示
+
+1. 使用 `match` 处理 Result 和 Option
+2. 使用 `?` 简化错误传播
+3. 使用 `unwrap_or`, `unwrap_or_else` 提供默认值
+4. 使用 `map`, `and_then`, `or_else` 链式操作
+5. 自定义错误类型应该实现 `Debug` 和 `Display`
+6. 使用 `map_err()` 添加错误上下文
+7. 为自定义错误实现 `From` trait 简化错误转换
+
+## 答案
+
+查看 [src/lib.rs](src/lib.rs) 中的实现和测试。
+
