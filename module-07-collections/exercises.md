@@ -181,6 +181,77 @@ pub fn frequency_map(vec: &Vec<i32>) -> HashMap<i32, usize> {
 4. 使用 collect() 收集结果
 5. HashMap 使用 insert() 和 get()
 6. HashSet 使用 insert() 和 contains()
+7. 理解 BTreeMap 的有序性和范围查询
+8. 理解 VecDeque 的双端操作特性
+
+### 练习 11: BTreeMap 有序操作
+
+使用 BTreeMap 的有序性进行操作：
+
+```rust
+pub fn get_first_k_sorted(map: &std::collections::BTreeMap<i32, String>, k: usize) -> Vec<(i32, String)> {
+    todo!()
+}
+
+pub fn range_query(map: &std::collections::BTreeMap<i32, String>, start: i32, end: i32) -> Vec<(i32, String)> {
+    todo!()
+}
+
+pub fn sorted_keys(map: &std::collections::BTreeMap<i32, String>) -> Vec<i32> {
+    todo!()
+}
+```
+
+### 练习 12: VecDeque 双端操作
+
+使用 VecDeque 进行双端操作：
+
+```rust
+use std::collections::VecDeque;
+
+pub fn deque_operations() -> (Vec<i32>, Vec<i32>) {
+    todo!()
+}
+
+pub fn simulate_queue() -> Vec<i32> {
+    todo!()
+}
+
+pub fn simulate_stack() -> Vec<i32> {
+    todo!()
+}
+```
+
+### 练习 13: 集合性能对比
+
+比较不同集合的操作性能：
+
+```rust
+pub fn benchmark_vec_lookup(n: usize) {
+    todo!()
+}
+
+pub fn benchmark_hashmap_lookup(n: usize) {
+    todo!()
+}
+
+pub fn benchmark_btreemap_lookup(n: usize) {
+    todo!()
+}
+```
+
+## 提示
+
+1. 使用 iter() 创建迭代器
+2. 使用 map() 转换元素
+3. 使用 filter() 过滤元素
+4. 使用 collect() 收集结果
+5. HashMap 使用 insert() 和 get()
+6. HashSet 使用 insert() 和 contains()
+7. 理解 BTreeMap 的有序性和范围查询
+8. 理解 VecDeque 的双端操作特性
+9. BTreeMap 使用 range() 进行范围查询
+10. VecDeque 使用 push_front/pop_front 和 push_back/pop_back
 
 ## 答案
 
