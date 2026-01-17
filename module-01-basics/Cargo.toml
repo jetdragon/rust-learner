@@ -5,14 +5,14 @@ edition.workspace = true
 
 [dependencies]
 
-[[bin]]
+[[example]]
 name = "variables"
 path = "examples/variables.rs"
 
-[[bin]]
+[[example]]
 name = "data_types"
 path = "examples/data_types.rs"
 
-[[bin]]
+[[example]]
 name = "functions"
 path = "examples/functions.rs"
