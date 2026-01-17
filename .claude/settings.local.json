@@ -24,7 +24,15 @@
       "Skill(openspec:apply)",
       "Skill(openspec:apply:*)",
       "Bash(dir:*)",
-      "Bash(\"\\) 方式\n- 修复主菜单、仪表板、更新进度、模块详情界面的方向键跳行\n- 修复 Tab 键在左右两栏界面切换焦点问题\n- 简化 widgets import\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(\"\\) 方式\n- 修复主菜单、仪表板、更新进度、模块详情界面的方向键跳行\n- 修复 Tab 键在左右两栏界面切换焦点问题\n- 简化 widgets import\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(cargo tree:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo check:*)",
+      "Bash(git reset:*)",
+      "Bash(done)"
     ]
   }
 }

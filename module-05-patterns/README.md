@@ -334,4 +334,4 @@ A: 使用 `..=` 包含结束值，使用 `..` 不包含结束值。例如 `1..=5
 
 完成本模块后，继续学习：
 
-- [module-05-error-handling](../module-05-error-handling/) - 错误处理与 Result 类型
+- [module-06-error-handling](../module-06-error-handling/) - 错误处理与 Result 类型

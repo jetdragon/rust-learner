@@ -14,16 +14,16 @@
 ## 学习路径
 
 ```
-module-01-basics    → 变量、数据类型、函数
-module-02-ownership  → Rust 核心概念
+module-01-basics      → 变量、数据类型、函数
+module-02-ownership    → Rust 核心概念
 module-03-structs-enums → 自定义数据类型
-module-04-patterns   → 强大的控制流工具
-module-05-error-handling → Result 和 Option
-module-06-collections → Vec、HashMap 等
-module-07-traits-generics → Trait 与泛型
-module-08-lifetimes  → 引用的有效性
-module-09-concurrency → 线程与消息传递
-module-10-project    → 综合应用
+module-04-lifetimes    → 引用的有效性（重要！）
+module-05-patterns     → 强大的控制流工具
+module-06-error-handling → Result 和 Option
+module-07-collections  → Vec、HashMap 等
+module-08-traits-generics → Trait 与泛型
+module-09-concurrency  → 线程与消息传递
+module-10-project      → 综合应用
 ```
 
 ## 快速开始

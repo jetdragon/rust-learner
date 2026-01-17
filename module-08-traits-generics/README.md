@@ -1,11 +1,11 @@
-# 07-Trait 与泛型
+# 08-Trait 与泛型
 
 ## 学习目标
 
 - 理解 Trait 的定义和用途
 - 掌握泛型编程基础
 - 学会使用 Trait Bound
-- 了解生命周期参数
+- 掌握 Trait 高级特性（关联类型、默认参数等）
 
 ## 核心概念
 
@@ -69,16 +69,6 @@ where
     U: Clone + Debug,
 {
     // ...
-}
-```
-
-### 5. 生命周期
-
-生命周期确保引用有效。
-
-```rust
-fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
-    if x.len() > y.len() { x } else { y }
 }
 ```
 
@@ -146,34 +136,15 @@ where
 }
 ```
 
-## 生命周期规则
-
-1. **省略规则**:
-   - 每个引用参数都有自己的生命周期
-   - 如果只有一个输入生命周期，赋给所有输出生命周期
-   - 如果有多个输入生命周期，但其中一个是 `&self` 或 `&mut self`，赋给 `self` 的生命周期
-
-2. **静态生命周期**:
-   ```rust
-   let s: &'static str = "I have a static lifetime.";
-   ```
-
-3. **结构体中的生命周期**:
-   ```rust
-   struct ImportantExcerpt<'a> {
-       part: &'a str,
-   }
-   ```
-
 ## 实践建议
 
 1. **优先使用 Trait 而非具体类型**: 提高代码灵活性
 2. **合理使用泛型**: 避免过度抽象
-3. **理解生命周期规则**: 大多数情况编译器能推断
-4. **利用标准库 Trait**: 为类型实现常用 Trait
+3. **利用标准库 Trait**: 为类型实现常用 Trait
+4. **Trait Objects vs 泛型**: 理解两者的使用场景和性能差异
 
 ## 相关资源
 
 - [Rust Book - Trait Bound](https://doc.rust-lang.org/book/ch10-02-traits.html)
-- [Rust Book - 生命周期](https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html)
+- [Rust Book - Advanced Traits](https://doc.rust-lang.org/book/ch19-03-advanced-traits.html)
 - [API 文档 - std::marker](https://doc.rust-lang.org/std/marker/index.html)

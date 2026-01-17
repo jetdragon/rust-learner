@@ -1,4 +1,4 @@
-# 错误处理 (Error Handling)
+# 06-错误处理 (Error Handling)
 
 ## 模块简介
 
@@ -268,5 +268,5 @@ A: `expect` 更好，因为它允许你提供错误消息，便于调试。只�
 
 完成本模块后，继续学习：
 
-- [module-06-collections](../module-06-collections/) - 集合类型
-- [module-07-traits-generics](../module-07-traits-generics/) - Trait 与泛型
+- [module-07-collections](../module-07-collections/) - 集合类型
+- [module-08-traits-generics](../module-08-traits-generics/) - Trait 与泛型

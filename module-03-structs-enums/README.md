@@ -328,4 +328,4 @@ A: 方法是在结构体/枚举的上下文中定义的，第一个参数总是 
 
 完成本模块后，继续学习：
 
-- [module-04-patterns](../module-04-patterns/) - 深入学习模式匹配
+- [module-04-lifetimes](../module-04-lifetimes/) - 理解生命周期，深入掌握所有权系统

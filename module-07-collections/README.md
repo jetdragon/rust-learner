@@ -1,4 +1,4 @@
-# 集合类型 (Collections)
+# 07-集合类型 (Collections)
 
 ## 模块简介
 
@@ -174,5 +174,5 @@ A: String 拥有数据，可变；&str 是借用，不可变。函数参数常�
 
 完成本模块后，继续学习：
 
-- [module-07-traits-generics](../module-07-traits-generics/) - Trait 与泛型
-- [module-08-lifetimes](../module-08-lifetimes/) - 生命周期
+- [module-08-traits-generics](../module-08-traits-generics/) - Trait 与泛型
+- [module-09-concurrency](../module-09-concurrency/) - 并发编程
