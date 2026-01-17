@@ -103,7 +103,7 @@ pub fn first_word_improved(s: &str) -> &str {
 /// * `s: String` - 获取 String 的所有权
 pub fn take_ownership(s: String) {
     println!("{}", s);
-}  // s 超出作用域，被丢弃
+} // s 超出作用域，被丢弃
 
 /// 演示拷贝语义
 ///
@@ -112,7 +112,7 @@ pub fn take_ownership(s: String) {
 /// * `x: i32` - i32 实现了 Copy，会拷贝而非移动
 pub fn makes_copy(x: i32) {
     println!("{}", x);
-}  // x 超出作用域，但因为是 Copy，无特殊处理
+} // x 超出作用域，但因为是 Copy，无特殊处理
 
 /// 返回 String 的所有权
 ///
@@ -159,15 +159,16 @@ pub fn change(some_string: &mut String) {
 /// }
 /// ```
 #[allow(dead_code)]
-pub fn dangle_example() -> String {  // 正确做法：返回 String
+pub fn dangle_example() -> String {
+    // 正确做法：返回 String
     let s = String::from("hello");
-    s  // 转移所有权而非返回引用
+    s // 转移所有权而非返回引用
 }
 
 /// 正确的做法：直接返回 String
 pub fn no_dangle() -> String {
     let s = String::from("hello");
-    s  // s 的所有权转移给调用者
+    s // s 的所有权转移给调用者
 }
 
 #[cfg(test)]
@@ -179,7 +180,7 @@ mod tests {
         let s = String::from("hello");
         let len = calculate_length(&s);
         assert_eq!(len, 5);
-        assert_eq!(s, "hello");  // 验证 s 仍然有效
+        assert_eq!(s, "hello"); // 验证 s 仍然有效
     }
 
     #[test]

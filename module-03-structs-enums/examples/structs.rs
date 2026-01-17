@@ -24,7 +24,7 @@ fn main() {
     let user2 = User {
         username,
         email,
-        ..user1  // 结构体更新语法
+        ..user1 // 结构体更新语法
     };
     println!("  用户2: {}", user2.username);
 

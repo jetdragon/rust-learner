@@ -156,7 +156,11 @@ mod tests {
 
         // 使用 if let（需要 else）
         let result_if_let = if let Some(v) = value {
-            if v > 3 { v * 2 } else { 0 }
+            if v > 3 {
+                v * 2
+            } else {
+                0
+            }
         } else {
             0
         };

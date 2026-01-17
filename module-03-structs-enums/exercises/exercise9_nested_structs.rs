@@ -131,17 +131,9 @@ fn main() {
     );
 
     // 创建员工
-    let mut emp1 = Employee::new(
-        String::from("张三"),
-        String::from("工程师"),
-        address1,
-    );
+    let mut emp1 = Employee::new(String::from("张三"), String::from("工程师"), address1);
 
-    let emp2 = Employee::new(
-        String::from("李四"),
-        String::from("设计师"),
-        address2,
-    );
+    let emp2 = Employee::new(String::from("李四"), String::from("设计师"), address2);
 
     println!("{}", emp1.describe());
 
@@ -219,11 +211,7 @@ mod tests {
             String::from("10001"),
         );
 
-        let emp = Employee::new(
-            String::from("Alice"),
-            String::from("Developer"),
-            addr,
-        );
+        let emp = Employee::new(String::from("Alice"), String::from("Developer"), addr);
 
         assert_eq!(emp.name, "Alice");
         assert_eq!(emp.position, "Developer");
@@ -238,11 +226,7 @@ mod tests {
             String::from("00000"),
         );
 
-        let mut emp = Employee::new(
-            String::from("Bob"),
-            String::from("Junior"),
-            addr,
-        );
+        let mut emp = Employee::new(String::from("Bob"), String::from("Junior"), addr);
 
         emp.promote(String::from("Senior"));
         assert_eq!(emp.position, "Senior");
@@ -265,11 +249,7 @@ mod tests {
             String::from("00000"),
         );
 
-        let emp = Employee::new(
-            String::from("Alice"),
-            String::from("Dev"),
-            addr,
-        );
+        let emp = Employee::new(String::from("Alice"), String::from("Dev"), addr);
 
         company.add_employee(emp);
         assert_eq!(company.employee_count(), 1);
@@ -285,11 +265,7 @@ mod tests {
             String::from("00000"),
         );
 
-        let emp = Employee::new(
-            String::from("Alice"),
-            String::from("Dev"),
-            addr,
-        );
+        let emp = Employee::new(String::from("Alice"), String::from("Dev"), addr);
 
         company.add_employee(emp);
 
@@ -317,8 +293,16 @@ mod tests {
             String::from("00000"),
         );
 
-        company.add_employee(Employee::new(String::from("Alice"), String::from("Dev"), addr1));
-        company.add_employee(Employee::new(String::from("Bob"), String::from("Designer"), addr2));
+        company.add_employee(Employee::new(
+            String::from("Alice"),
+            String::from("Dev"),
+            addr1,
+        ));
+        company.add_employee(Employee::new(
+            String::from("Bob"),
+            String::from("Designer"),
+            addr2,
+        ));
 
         let names = company.list_employees();
         assert_eq!(names.len(), 2);
@@ -336,7 +320,11 @@ mod tests {
             String::from("00000"),
         );
 
-        company.add_employee(Employee::new(String::from("Alice"), String::from("Dev"), addr));
+        company.add_employee(Employee::new(
+            String::from("Alice"),
+            String::from("Dev"),
+            addr,
+        ));
 
         assert_eq!(company.employee_count(), 1);
 

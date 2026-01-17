@@ -11,14 +11,14 @@ fn test_ownership_transfer() {
     // Copy 类型
     let x = 5;
     let y = x;
-    assert_eq!(x, 5);  // x 仍然有效
+    assert_eq!(x, 5); // x 仍然有效
     assert_eq!(y, 5);
 }
 
 // ========== 练习 2: 函数与所有权 ==========
 #[test]
 fn test_function_ownership() {
-    use module_02_ownership::{take_ownership, makes_copy};
+    use module_02_ownership::{makes_copy, take_ownership};
 
     let s = String::from("hello");
     take_ownership(s);
@@ -26,7 +26,7 @@ fn test_function_ownership() {
 
     let x = 5;
     makes_copy(x);
-    assert_eq!(x, 5);  // x 仍然有效（Copy 类型）
+    assert_eq!(x, 5); // x 仍然有效（Copy 类型）
 }
 
 // ========== 练习 3: 引用与借用 ==========
@@ -37,7 +37,7 @@ fn test_calculate_length() {
     let s = String::from("hello");
     let len = calculate_length(&s);
     assert_eq!(len, 5);
-    assert_eq!(s, "hello");  // s 仍然有效
+    assert_eq!(s, "hello"); // s 仍然有效
 }
 
 // ========== 练习 4: 可变引用 ==========
@@ -163,13 +163,13 @@ fn test_copy_types() {
 fn test_move_semantics() {
     // String 不是 Copy 类型
     let s1 = String::from("hello");
-    let s2 = s1;  // 移动
+    let s2 = s1; // 移动
     assert_eq!(s2, "hello");
     // s1 不再有效
 
     // Vec 不是 Copy 类型
     let v1 = vec![1, 2, 3];
-    let v2 = v1;  // 移动
+    let v2 = v1; // 移动
     assert_eq!(v2, vec![1, 2, 3]);
     // v1 不再有效
 }
@@ -178,7 +178,7 @@ fn test_move_semantics() {
 #[test]
 fn test_clone() {
     let s1 = String::from("hello");
-    let s2 = s1.clone();  // 深拷贝
+    let s2 = s1.clone(); // 深拷贝
     assert_eq!(s1, "hello");
     assert_eq!(s2, "hello");
 }
@@ -205,7 +205,7 @@ fn test_mutable_borrow() {
     {
         let r1 = &mut s;
         r1.push_str(" world");
-    }  // r1 作用域结束
+    } // r1 作用域结束
 
     let r2 = &mut s;
     r2.push_str("!");

@@ -366,7 +366,10 @@ mod tests {
         let circle = Shape::Circle { radius: 1.0 };
         assert!((circle.area() - std::f64::consts::PI).abs() < 0.001);
 
-        let rect = Shape::Rectangle { width: 10.0, height: 5.0 };
+        let rect = Shape::Rectangle {
+            width: 10.0,
+            height: 5.0,
+        };
         assert_eq!(rect.area(), 50.0);
     }
 

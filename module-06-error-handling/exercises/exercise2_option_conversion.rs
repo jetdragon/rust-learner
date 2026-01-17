@@ -38,7 +38,10 @@ mod tests {
     #[test]
     fn test_option_to_result() {
         assert_eq!(option_to_result(Some(5), "错误".to_string()), Ok(5));
-        assert_eq!(option_to_result(None, "错误".to_string()), Err("错误".to_string()));
+        assert_eq!(
+            option_to_result(None, "错误".to_string()),
+            Err("错误".to_string())
+        );
     }
 
     #[test]

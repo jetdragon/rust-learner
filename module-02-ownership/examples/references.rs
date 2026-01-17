@@ -23,11 +23,11 @@ fn main() {
     println!("3. 引用的引用:");
     let s3 = String::from("hello");
     let r1 = &s3;
-    let r2 = &r1;  // r2 是对引用的引用
+    let r2 = &r1; // r2 是对引用的引用
     println!("  s3 = \"{}\"", s3);
     println!("  r1 引用 s3");
     println!("  r2 引用 r1");
-    println!("  通过 r2 访问: \"{}\"\n", *r2);  // 解引用两次
+    println!("  通过 r2 访问: \"{}\"\n", *r2); // 解引用两次
 
     // 使用引用避免拷贝
     println!("4. 避免不必要的拷贝:");
@@ -68,7 +68,7 @@ fn main() {
     let r1 = &s8;
     let r2 = &s9;
     println!("  r1 指向 s8, r2 指向 s9");
-    println!("  r1 == r2: {}", r1 == r2);  // 比较值
+    println!("  r1 == r2: {}", r1 == r2); // 比较值
     println!("  不同的内存地址，但值相同\n");
 
     // 引用的解引用
@@ -84,7 +84,7 @@ fn main() {
 // 计算长度（借用字符串）
 fn calculate_length(s: &String) -> usize {
     s.len()
-}  // s 超出作用域，但不拥有值，所以不会丢弃
+} // s 超出作用域，但不拥有值，所以不会丢弃
 
 // 追加文本（可变借用）
 fn append_world(s: &mut String) {

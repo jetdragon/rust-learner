@@ -15,9 +15,9 @@ fn main() {
 
     // 切片语法的简化
     let slice = &s[0..5];
-    let slice = &s[..5];  // 等价，从 0 开始可省略
+    let slice = &s[..5]; // 等价，从 0 开始可省略
     let slice = &s[6..];
-    let slice = &s[..];    // 整个字符串
+    let slice = &s[..]; // 整个字符串
     println!("  简化语法:");
     println!("    [0..5] 等价于 [..5]: \"{}\"", &s[..5]);
     println!("    [6..11] 等价于 [6..]: \"{}\"", &s[6..]);
@@ -42,11 +42,11 @@ fn main() {
     println!("4. 多种切片语法:");
     let arr = [10, 20, 30, 40, 50];
     println!("  原数组: {:?}", arr);
-    println!("  [0..3]: {:?}", &arr[0..3]);   // [10, 20, 30]
-    println!("  [..3]: {:?}", &arr[..3]);     // [10, 20, 30]
-    println!("  [2..]: {:?}", &arr[2..]);     // [30, 40, 50]
-    println!("  [..]: {:?}", &arr[..]);       // [10, 20, 30, 40, 50]
-    println!("  [3..4]: {:?}", &arr[3..4]);   // [40]\n");
+    println!("  [0..3]: {:?}", &arr[0..3]); // [10, 20, 30]
+    println!("  [..3]: {:?}", &arr[..3]); // [10, 20, 30]
+    println!("  [2..]: {:?}", &arr[2..]); // [30, 40, 50]
+    println!("  [..]: {:?}", &arr[..]); // [10, 20, 30, 40, 50]
+    println!("  [3..4]: {:?}", &arr[3..4]); // [40]\n");
 
     // 切片是不可变的
     println!("5. 切片的不可变性:");
@@ -82,11 +82,11 @@ fn main() {
     // 切片作为参数
     println!("9. 切片作为函数参数:");
     let s = String::from("hello world");
-    let word = first_word(&s);  // 传入 &String
+    let word = first_word(&s); // 传入 &String
     println!("  first_word(&String): \"{}\"", word);
 
     let s_literal = "hello world";
-    let word = first_word(s_literal);  // 传入 &str
+    let word = first_word(s_literal); // 传入 &str
     println!("  first_word(&str): \"{}\"\n", word);
 
     // 多维数组切片
@@ -102,7 +102,11 @@ fn main() {
     let arr = [1, 2, 3, 4, 5];
     let slice1 = &arr[0..2];
     let slice2 = &arr[0..4];
-    println!("  slice1 长度: {}, slice2 长度: {}", slice1.len(), slice2.len());
+    println!(
+        "  slice1 长度: {}, slice2 长度: {}",
+        slice1.len(),
+        slice2.len()
+    );
     println!("  切片长度在运行时确定\n");
 
     // 字节数组切片

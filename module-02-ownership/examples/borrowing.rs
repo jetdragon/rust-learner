@@ -7,7 +7,7 @@ fn main() {
     // 不可变借用示例
     println!("1. 不可变借用 (&T):");
     let s1 = String::from("hello");
-    let len = calculate_length(&s1);  // 借用 s1
+    let len = calculate_length(&s1); // 借用 s1
     println!("  '{}' 的长度是 {}", s1, len);
     println!("  s1 仍然有效，因为只借用了它\n");
 
@@ -15,7 +15,7 @@ fn main() {
     println!("2. 可变借用 (&mut T):");
     let mut s2 = String::from("hello");
     println!("  修改前: s2 = \"{}\"", s2);
-    change(&mut s2);  // 可变借用
+    change(&mut s2); // 可变借用
     println!("  修改后: s2 = \"{}\"\n", s2);
 
     // 借用规则演示
@@ -27,9 +27,9 @@ fn main() {
         r1.push_str(", world");
         println!("  r1 = \"{}\"", r1);
         // let r2 = &mut s3;  // 错误！不能同时有两个可变引用
-    }  // r1 作用域结束
+    } // r1 作用域结束
 
-    let r2 = &mut s3;  // 现在可以创建新的可变引用
+    let r2 = &mut s3; // 现在可以创建新的可变引用
     r2.push_str("!");
     println!("  r2 = \"{}\"\n", r2);
 
@@ -46,9 +46,9 @@ fn main() {
     println!("  不可变引用 r1 = \"{}\"", r1);
     // let r2 = &mut s5;  // 错误！不能在不可变引用存在时创建可变引用
     println!("  不能在 r1 有效时创建可变引用");
-    drop(r1);  // 显式丢弃 r1
+    drop(r1); // 显式丢弃 r1
 
-    let r2 = &mut s5;  // 现在可以了
+    let r2 = &mut s5; // 现在可以了
     r2.push_str(" world");
     println!("  可变引用 r2 = \"{}\"\n", r2);
 
@@ -61,7 +61,7 @@ fn main() {
     // 引用作用域从声明开始，到最后一次使用结束
     // 而不是到所在的作用域结束
 
-    let r3 = &mut s6;  // 新的作用域开始
+    let r3 = &mut s6; // 新的作用域开始
     r3.push_str(" world");
     println!("  可变引用 r3 = \"{}\"\n", r3);
 
@@ -79,7 +79,7 @@ fn main() {
 // 计算长度（借用，不获取所有权）
 fn calculate_length(s: &String) -> usize {
     s.len()
-}  // s 超出作用域，但因为它不拥有值，所以不会丢弃
+} // s 超出作用域，但因为它不拥有值，所以不会丢弃
 
 // 修改字符串（可变借用）
 fn change(some_string: &mut String) {

@@ -102,10 +102,7 @@ fn main() {
     println!("=== 博客文章状态机 ===\n");
 
     // 创建草稿
-    let mut post = Post::new(
-        String::from("我的第一篇博客"),
-        String::from("这是内容..."),
-    );
+    let mut post = Post::new(String::from("我的第一篇博客"), String::from("这是内容..."));
 
     println!("状态: {}", post.state_description());
     println!("内容: {:?}", post.content());
@@ -135,10 +132,7 @@ fn main() {
     println!("状态: {}", post.state_description());
 
     // 尝试在审核状态下编辑
-    match post.edit(
-        String::from("试图编辑"),
-        String::from("应该失败"),
-    ) {
+    match post.edit(String::from("试图编辑"), String::from("应该失败")) {
         Ok(_) => println!("编辑成功"),
         Err(e) => println!("编辑失败: {}", e),
     }
@@ -178,10 +172,7 @@ mod tests {
 
     #[test]
     fn test_new_post_is_draft() {
-        let post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let post = Post::new(String::from("Title"), String::from("Content"));
 
         assert!(matches!(post.state(), PostState::Draft));
         assert_eq!(post.content(), None);
@@ -189,10 +180,7 @@ mod tests {
 
     #[test]
     fn test_draft_to_pending_review() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         assert!(post.request_review().is_ok());
         assert!(matches!(post.state(), PostState::PendingReview));
@@ -200,10 +188,7 @@ mod tests {
 
     #[test]
     fn test_pending_review_to_published() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         post.request_review().unwrap();
         assert!(post.approve().is_ok());
@@ -212,10 +197,7 @@ mod tests {
 
     #[test]
     fn test_published_post_has_content() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         post.request_review().unwrap();
         post.approve().unwrap();
@@ -224,10 +206,7 @@ mod tests {
 
     #[test]
     fn test_cannot_skip_review() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         // 不能从草稿直接发布
         assert!(post.approve().is_err());
@@ -236,10 +215,7 @@ mod tests {
 
     #[test]
     fn test_reject_returns_to_draft() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         post.request_review().unwrap();
         post.reject().unwrap();
@@ -248,31 +224,26 @@ mod tests {
 
     #[test]
     fn test_only_draft_can_edit() {
-        let mut post = Post::new(
-            String::from("Old Title"),
-            String::from("Old Content"),
-        );
+        let mut post = Post::new(String::from("Old Title"), String::from("Old Content"));
 
         // 草稿状态可以编辑
-        assert!(post.edit(
-            String::from("New Title"),
-            String::from("New Content")
-        ).is_ok());
+        assert!(post
+            .edit(String::from("New Title"), String::from("New Content"))
+            .is_ok());
 
         // 待审核状态不能编辑
         post.request_review().unwrap();
-        assert!(post.edit(
-            String::from("Another Title"),
-            String::from("Another Content")
-        ).is_err());
+        assert!(post
+            .edit(
+                String::from("Another Title"),
+                String::from("Another Content")
+            )
+            .is_err());
     }
 
     #[test]
     fn test_invalid_state_transitions() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         // 草稿不能批准
         assert!(post.approve().is_err());
@@ -295,20 +266,16 @@ mod tests {
 
     #[test]
     fn test_full_workflow() {
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
 
         // 草稿
         assert!(matches!(post.state(), PostState::Draft));
         assert_eq!(post.content(), None);
 
         // 编辑草稿
-        assert!(post.edit(
-            String::from("Updated"),
-            String::from("Updated Content")
-        ).is_ok());
+        assert!(post
+            .edit(String::from("Updated"), String::from("Updated Content"))
+            .is_ok());
 
         // 请求审核
         assert!(post.request_review().is_ok());
@@ -331,17 +298,11 @@ mod tests {
 
     #[test]
     fn test_state_description() {
-        let post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let post = Post::new(String::from("Title"), String::from("Content"));
 
         assert_eq!(post.state_description(), "草稿");
 
-        let mut post = Post::new(
-            String::from("Title"),
-            String::from("Content"),
-        );
+        let mut post = Post::new(String::from("Title"), String::from("Content"));
         post.request_review().unwrap();
         assert_eq!(post.state_description(), "待审核");
 

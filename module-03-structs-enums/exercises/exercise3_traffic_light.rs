@@ -51,11 +51,7 @@ impl TrafficLight {
 }
 
 fn main() {
-    let lights = vec![
-        TrafficLight::Red,
-        TrafficLight::Yellow,
-        TrafficLight::Green,
-    ];
+    let lights = vec![TrafficLight::Red, TrafficLight::Yellow, TrafficLight::Green];
 
     println!("=== 交通信号灯 ===\n");
 

@@ -57,12 +57,7 @@ pub fn mix_colors(_c1: &Color, _c2: &Color) -> &'static str {
 }
 
 fn main() {
-    let colors = vec![
-        Color::Red,
-        Color::Blue,
-        Color::Green,
-        Color::Yellow,
-    ];
+    let colors = vec![Color::Red, Color::Blue, Color::Green, Color::Yellow];
 
     println!("=== 颜色匹配练习 ===\n");
 

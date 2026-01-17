@@ -53,10 +53,16 @@ fn test_shape_area() {
     let circle = Shape::Circle { radius: 2.0 };
     assert!((circle.area() - 12.566).abs() < 0.01);
 
-    let rect = Shape::Rectangle { width: 10.0, height: 5.0 };
+    let rect = Shape::Rectangle {
+        width: 10.0,
+        height: 5.0,
+    };
     assert_eq!(rect.area(), 50.0);
 
-    let triangle = Shape::Triangle { base: 6.0, height: 4.0 };
+    let triangle = Shape::Triangle {
+        base: 6.0,
+        height: 4.0,
+    };
     assert_eq!(triangle.area(), 12.0);
 }
 

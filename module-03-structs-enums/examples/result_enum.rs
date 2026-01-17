@@ -68,7 +68,7 @@ fn main() {
 
 // 使用 ? 简化错误传播
 fn parse_and_double(s: &str) -> Result<i32, ParseIntError> {
-    let parsed: i32 = s.parse()?;  // 如果失败，提前返回 Err
+    let parsed: i32 = s.parse()?; // 如果失败，提前返回 Err
     Ok(parsed * 2)
 }
 

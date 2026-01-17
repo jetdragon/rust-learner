@@ -59,11 +59,7 @@ mod tests {
 
     #[test]
     fn test_book_struct() {
-        let book = Book::new(
-            String::from("Test Book"),
-            String::from("Test Author"),
-            100,
-        );
+        let book = Book::new(String::from("Test Book"), String::from("Test Author"), 100);
 
         // 测试字段访问
         assert_eq!(book.title, "Test Book");

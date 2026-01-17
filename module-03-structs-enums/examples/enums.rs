@@ -22,8 +22,14 @@ fn main() {
     println!("\n3. 模式匹配:");
     let shapes = vec![
         Shape::Circle { radius: 1.0 },
-        Shape::Rectangle { width: 10.0, height: 5.0 },
-        Shape::Triangle { base: 6.0, height: 4.0 },
+        Shape::Rectangle {
+            width: 10.0,
+            height: 5.0,
+        },
+        Shape::Triangle {
+            base: 6.0,
+            height: 4.0,
+        },
     ];
 
     for shape in shapes {

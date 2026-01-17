@@ -51,18 +51,27 @@ mod tests {
     #[test]
     fn test_divide_with_custom_error() {
         assert_eq!(divide_with_custom_error(10, 2), Ok(5));
-        assert_eq!(divide_with_custom_error(10, 0), Err(MathError::DivisionByZero));
+        assert_eq!(
+            divide_with_custom_error(10, 0),
+            Err(MathError::DivisionByZero)
+        );
     }
 
     #[test]
     fn test_sqrt_with_custom_error() {
         assert_eq!(sqrt_with_custom_error(9.0), Ok(3.0));
-        assert_eq!(sqrt_with_custom_error(-1.0), Err(MathError::NegativeSquareRoot));
+        assert_eq!(
+            sqrt_with_custom_error(-1.0),
+            Err(MathError::NegativeSquareRoot)
+        );
     }
 
     #[test]
     fn test_error_description() {
         assert_eq!(MathError::DivisionByZero.description(), "除数不能为零");
-        assert_eq!(MathError::NegativeSquareRoot.description(), "不能计算负数的平方根");
+        assert_eq!(
+            MathError::NegativeSquareRoot.description(),
+            "不能计算负数的平方根"
+        );
     }
 }

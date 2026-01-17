@@ -24,7 +24,10 @@ fn main() {
 
     println!("\n=== 组合三个 Result ===");
     println!("{:?}", sum_three_results(Ok(1), Ok(2), Ok(3)));
-    println!("{:?}", sum_three_results(Ok(1), Err("e1".to_string()), Ok(3)));
+    println!(
+        "{:?}",
+        sum_three_results(Ok(1), Err("e1".to_string()), Ok(3))
+    );
 }
 
 #[cfg(test)]
@@ -34,8 +37,14 @@ mod tests {
     #[test]
     fn test_sum_results() {
         assert_eq!(sum_results(Ok(5), Ok(3)), Ok(8));
-        assert_eq!(sum_results(Ok(5), Err("错误".to_string())), Err("错误".to_string()));
-        assert_eq!(sum_results(Err("e1".to_string()), Ok(5)), Err("e1".to_string()));
+        assert_eq!(
+            sum_results(Ok(5), Err("错误".to_string())),
+            Err("错误".to_string())
+        );
+        assert_eq!(
+            sum_results(Err("e1".to_string()), Ok(5)),
+            Err("e1".to_string())
+        );
     }
 
     #[test]

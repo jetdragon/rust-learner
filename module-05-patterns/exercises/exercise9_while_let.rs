@@ -30,7 +30,10 @@ pub fn sum_list(list: &List) -> i32 {
 }
 
 fn main() {
-    let list = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))));
+    let list = List::Cons(
+        1,
+        Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
+    );
 
     println!("=== 链表遍历 ===\n");
     print_list(&list);
@@ -45,7 +48,10 @@ mod tests {
 
     #[test]
     fn test_list_length() {
-        let list = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))));
+        let list = List::Cons(
+            1,
+            Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
+        );
         assert_eq!(list_length(&list), 3);
 
         assert_eq!(list_length(&List::Nil), 0);
@@ -53,7 +59,10 @@ mod tests {
 
     #[test]
     fn test_sum_list() {
-        let list = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))));
+        let list = List::Cons(
+            1,
+            Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil))))),
+        );
         assert_eq!(sum_list(&list), 6);
 
         assert_eq!(sum_list(&List::Nil), 0);

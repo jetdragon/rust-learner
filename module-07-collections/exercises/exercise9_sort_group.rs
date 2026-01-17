@@ -12,5 +12,8 @@ fn main() {
     let mut numbers = vec![3, 1, 4, 1, 5, 9, 2, 6];
     sort_vec(&mut numbers);
     let (evens, odds) = group_by_parity(&numbers);
-    println!("sorted: {:?}, evens: {:?}, odds: {:?}", numbers, evens, odds);
+    println!(
+        "sorted: {:?}, evens: {:?}, odds: {:?}",
+        numbers, evens, odds
+    );
 }
