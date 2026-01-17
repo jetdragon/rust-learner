@@ -375,15 +375,57 @@ mod tests {
 }
 ```
 
+### 16. Async/Await 基础
+
+使用 async/await 编写异步函数：
+
+```rust
+pub async fn async_hello() -> String {
+    // TODO: 返回 "Hello, async!"
+}
+
+pub async fn async_sleep(ms: u64) -> String {
+    // TODO: 异步睡眠 ms 毫秒后返回消息
+}
+
+pub async fn async_add(a: u32, b: u32) -> u32 {
+    // TODO: 异步加法，模拟耗时操作
+}
+```
+
+### 17. 并发 Async 任务
+
+使用 tokio 并发执行多个 async 任务：
+
+```rust
+use tokio::task::JoinSet;
+
+pub async fn concurrent_tasks(tasks: Vec<u32>) -> Vec<String> {
+    // TODO: 并发执行所有任务
+}
+
+pub async fn race_tasks(tasks: Vec<u32>) -> u32 {
+    // TODO: 返回第一个完成的任务的值
+}
+```
+
+### 18. 超时处理
+
+使用 tokio 的超时功能：
+
+```rust
+pub async fn timeout_example(duration_ms: u64) -> String {
+    // TODO: 设置超时并执行任务
+}
+```
+
 ## 学习检查
 
 完成练习后，检查你是否理解：
 
-- [ ] 线程的创建和等待
-- [ ] Channel 的使用（发送和接收）
-- [ ] Mutex 的使用（加锁和解锁）
-- [ ] Arc 的使用（多线程共享）
-- [ ] RwLock 的读写分离
-- [ ] 原子类型的使用
-- [ ] 死锁的避免
-- [ ] 常见的并发模式
+- [ ] async/await 的基本语法
+- [ ] Future trait 的概念
+- [ ] tokio 运行时的使用
+- [ ] 并发执行 async 任务的方法
+- [ ] 异步错误处理
+- [ ] Stream 和迭代器的区别
