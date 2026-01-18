@@ -1,6 +1,4 @@
 mod api;
-mod db;
-mod models;
 
 use anyhow::Result;
 use axum::{
@@ -12,17 +10,16 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+pub struct AppState {
+    pub project_path: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize database
-    db::init_db()?;
-
-    // Get project path from environment or default to parent directory
     let project_path = std::env::var("PROJECT_PATH").unwrap_or_else(|_| "..".to_string());
 
-    let app_state = Arc::new(api::AppState { project_path });
+    let app_state = Arc::new(AppState { project_path });
 
-    // Build router
     let app = Router::new()
         .route("/api/modules", get(api::get_modules))
         .route("/api/modules/:id/progress", post(api::update_progress))
@@ -39,7 +36,6 @@ async fn main() -> Result<()> {
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
-    // Server address
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
 
     println!(

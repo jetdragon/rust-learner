@@ -1,13 +1,15 @@
 use anyhow::Result;
-use chrono::{Local, NaiveDate};
-use rusqlite::{Connection, OptionalExtension};
-use std::path::PathBuf;
+use chrono::Local;
+use rusqlite::Connection;
+use std::path::{Path, PathBuf};
 
 fn db_path() -> PathBuf {
-    let mut path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    path.push(".learning-companion");
-    path.push("data.db");
-    path
+    dirs::home_dir()
+        .map(|mut p| {
+            p.push(".learning-companion");
+            p.push("data.db");
+        })
+        .unwrap_or_else(|| PathBuf::from(".learning-companion/data.db"))
 }
 
 pub fn init_db() -> Result<()> {
@@ -18,18 +20,6 @@ pub fn init_db() -> Result<()> {
     }
 
     let conn = Connection::open(&db_path)?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS study_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            duration_minutes INTEGER NOT NULL,
-            modules_studied TEXT NOT NULL,
-            practice_count INTEGER NOT NULL DEFAULT 0,
-            notes TEXT
-        )",
-        [],
-    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS module_progress (
@@ -62,14 +52,6 @@ pub fn init_db() -> Result<()> {
             achievement_type TEXT NOT NULL UNIQUE,
             unlocked_at TEXT NOT NULL,
             metadata TEXT
-        )",
-        [],
-    )?;
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
         )",
         [],
     )?;
@@ -154,23 +136,4 @@ pub fn get_all_achievements() -> Result<Vec<String>> {
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(unlocked_types)
-}
-
-pub fn export_all_data() -> Result<String> {
-    let conn = Connection::open(db_path())?;
-
-    let mut output = String::new();
-    output.push_str("=== Learning Companion Export ===\n\n");
-
-    let mut stmt = conn.prepare("SELECT * FROM module_progress")?;
-    let rows = stmt.query_map([], |row| {
-        Ok((row.get::<_, String>(1)?, row.get::<_, f32>(4)?))
-    })?;
-
-    output.push_str("Module Progress:\n");
-    for row in rows.flatten() {
-        output.push_str(&format!("  - {}: {:.1}%\n", row.0, row.1));
-    }
-
-    Ok(output)
 }

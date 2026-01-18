@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ModuleCard } from './components/ModuleCard';
 import { AchievementsPanel } from './components/AchievementsPanel';
 import { PracticeSession } from './components/PracticeSession';
