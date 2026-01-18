@@ -145,7 +145,26 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
           <button onClick={onClose} className="text-warm-400 hover:text-warm-600 text-2xl">✕</button>
         </div>
 
-        {selectedExample ? (
+        {content && selectedExample ? (
+          // For example files (especially .rs), show as code directly, not markdown
+          <div className="rounded-lg overflow-hidden my-4 bg-gray-900">
+            <div className="bg-gray-800 text-gray-300 px-4 py-2 text-sm font-mono border-b border-gray-700">
+              {selectedExample} (Rust)
+            </div>
+            <SyntaxHighlighter
+              style={vscDarkPlus}
+              language="rust"
+              customStyle={{
+                margin: 0,
+                borderRadius: '0 0 0.5rem 0.5rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              {content}
+            </SyntaxHighlighter>
+          </div>
+        ) : content ? (
+          // For non-example content (readme, exercises, project)
           <div className="prose prose-warm max-w-none prose-invert 
             prose-headings:text-warm-800 prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4
             prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-8 prose-h2:mb-3
@@ -195,24 +214,6 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             >
               {content}
             </ReactMarkdown>
-          </div>
-        ) : selectedExample ? (
-          // For example files (especially .rs), show as code directly, not markdown
-          <div className="rounded-lg overflow-hidden my-4 bg-gray-900">
-            <div className="bg-gray-800 text-gray-300 px-4 py-2 text-sm font-mono border-b border-gray-700">
-              {selectedExample} (Rust)
-            </div>
-            <SyntaxHighlighter
-              style={vscDarkPlus}
-              language="rust"
-              customStyle={{
-                margin: 0,
-                borderRadius: '0 0 0.5rem 0.5rem',
-                fontSize: '0.875rem',
-              }}
-            >
-              {content}
-            </SyntaxHighlighter>
           </div>
         ) : examples.length > 0 ? (
           <div>
