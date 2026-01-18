@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-warm-50 text-warm-900;
+  }
+}
+
+@layer components {
+  .btn-warm {
+    @apply px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200
+           bg-warm-500 hover:bg-warm-600 active:bg-warm-700
+           focus:outline-none focus:ring-2 focus:ring-warm-400 focus:ring-offset-2;
+  }
+
+  .card-warm {
+    @apply bg-white rounded-xl shadow-lg p-6 border border-warm-200;
+  }
+
+  .input-warm {
+    @apply px-4 py-2 rounded-lg border-2 border-warm-300
+           focus:outline-none focus:border-warm-500
+           transition-colors duration-200;
+  }
+}
+
+.progress-bar-warm {
+  background: linear-gradient(90deg, #f97316, #ea580c);
+}
