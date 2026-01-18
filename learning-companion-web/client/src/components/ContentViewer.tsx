@@ -68,6 +68,14 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
       setContent(data.content);
       setSelectedExample(filename);
       setExamples([]);
+      
+      // Auto-detect if it's Rust code by extension
+      if (filename.endsWith('.rs')) {
+        // Force rust language for syntax highlighting
+        setTimeout(() => {
+          // This will be handled by the SyntaxHighlighter in render
+        }, 0);
+      }
     } catch (err) {
       setError('加载示例代码失败，请重试');
       console.error('Failed to load example:', err);
@@ -109,37 +117,51 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
     );
   }
 
+  const handleBackToExamples = () => {
+    setSelectedExample(null);
+    setContent('');
+    loadContent();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="card-warm max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-6">
-          <div>
+        <div className="flex items-center mb-6">
+          {selectedExample && (
+            <button
+              onClick={handleBackToExamples}
+              className="mr-3 text-warm-600 hover:text-warm-800 transition-colors"
+              aria-label="返回示例列表"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          <div className="flex-1">
             <h2 className="text-2xl font-bold text-warm-800">{getContentTypeName(contentType)}</h2>
-            {selectedExample && <p className="text-warm-600">{selectedExample}</p>}
+            {selectedExample && <p className="text-warm-600 text-sm">{selectedExample}</p>}
           </div>
           <button onClick={onClose} className="text-warm-400 hover:text-warm-600 text-2xl">✕</button>
         </div>
 
-        {examples.length > 0 ? (
-          <div>
-            <h3 className="text-xl font-semibold text-warm-700 mb-4">选择示例文件：</h3>
-            <div className="space-y-2">
-              {examples.map((example) => (
-                <button
-                  key={example}
-                  onClick={() => loadExampleContent(example)}
-                  className="w-full p-3 text-left bg-warm-50 hover:bg-warm-100 rounded-lg transition-colors text-warm-800 font-mono"
-                >
-                  📄 {example}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="prose prose-warm max-w-none prose-headings:text-warm-800 prose-p:text-warm-700 prose-li:text-warm-700 prose-strong:text-warm-800">
+        {selectedExample ? (
+          <div className="prose prose-warm max-w-none prose-invert 
+            prose-headings:text-warm-800 prose-h1:text-3xl prose-h1:font-bold prose-h1:mb-4
+            prose-h2:text-2xl prose-h2:font-semibold prose-h2:mt-8 prose-h2:mb-3
+            prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-2
+            prose-p:text-warm-700 prose-p:mb-4
+            prose-li:text-warm-700 prose-li:mb-1
+            prose-strong:text-warm-800
+            prose-blockquote:border-l-4 prose-blockquote:border-warm-300 prose-blockquote:pl-4 prose-blockquote:italic
+            prose-table:border-warm-200
+            prose-pre:bg-gray-900
+          ">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
+                h1: ({node, ...props}) => <h1 className="border-b border-warm-200 pb-2 mb-4" {...props} />,
+                h2: ({node, ...props}) => <h2 className="border-b border-warm-100 pb-1 mb-3" {...props} />,
                 code(props) {
                   const { inline, className, children } = props as any;
                   const match = /language-(\w+)/.exec(className || '');
@@ -173,6 +195,43 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             >
               {content}
             </ReactMarkdown>
+          </div>
+        ) : selectedExample ? (
+          // For example files (especially .rs), show as code directly, not markdown
+          <div className="rounded-lg overflow-hidden my-4 bg-gray-900">
+            <div className="bg-gray-800 text-gray-300 px-4 py-2 text-sm font-mono border-b border-gray-700">
+              {selectedExample} (Rust)
+            </div>
+            <SyntaxHighlighter
+              style={vscDarkPlus}
+              language="rust"
+              customStyle={{
+                margin: 0,
+                borderRadius: '0 0 0.5rem 0.5rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              {content}
+            </SyntaxHighlighter>
+          </div>
+        ) : examples.length > 0 ? (
+          <div>
+            <h3 className="text-xl font-semibold text-warm-700 mb-4">选择示例文件：</h3>
+            <div className="space-y-2">
+              {examples.map((example) => (
+                <button
+                  key={example}
+                  onClick={() => loadExampleContent(example)}
+                  className="w-full p-3 text-left bg-warm-50 hover:bg-warm-100 rounded-lg transition-colors text-warm-800 font-mono"
+                >
+                  📄 {example}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-warm-600">暂无内容</p>
           </div>
         )}
       </div>
