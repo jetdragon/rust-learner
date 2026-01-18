@@ -1,4 +1,8 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
 import type { LearningModule } from '../types';
 
 interface ContentViewerProps {
@@ -132,10 +136,43 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             </div>
           </div>
         ) : (
-          <div className="prose prose-warm max-w-none">
-            <pre className="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm font-mono whitespace-pre-wrap">
+          <div className="prose prose-warm max-w-none prose-headings:text-warm-800 prose-p:text-warm-700 prose-li:text-warm-700 prose-strong:text-warm-800">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code(props) {
+                  const { inline, className, children } = props as any;
+                  const match = /language-(\w+)/.exec(className || '');
+                  if (!inline && match) {
+                    return (
+                      <div className="rounded-lg overflow-hidden my-4">
+                        <div className="bg-gray-800 text-gray-300 px-4 py-2 text-sm font-mono border-b border-gray-700">
+                          {match[1]}
+                        </div>
+                        <SyntaxHighlighter
+                          style={vscDarkPlus}
+                          language={match[1]}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: '0 0 0.5rem 0.5rem',
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      </div>
+                    );
+                  }
+                  return (
+                    <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-red-600 font-semibold">
+                      {String(children).replace(/\n$/, '')}
+                    </code>
+                  );
+                },
+              }}
+            >
               {content}
-            </pre>
+            </ReactMarkdown>
           </div>
         )}
       </div>

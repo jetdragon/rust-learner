@@ -33,6 +33,10 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+    } else {
+      // Submit answers when on the last question
+      onSubmit(answers);
+      setShowResult(true);
     }
   };
 
@@ -40,24 +44,7 @@ export const PracticeSession: React.FC<PracticeSessionProps> = ({
     if (result && showResult) {
       // Auto-close after 5 seconds
       const timer = setTimeout(() => {
-        onClose();
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [result, showResult, onClose]);
-
-  useEffect(() => {
-    // Automatically submit when reaching the last question
-    if (currentQuestion === questions.length - 1 && answers[currentQuestion] !== -1) {
-      onSubmit(answers);
-      setShowResult(true);
-    }
-  }, [currentQuestion, answers, questions.length, onSubmit]);
-
-  useEffect(() => {
-    if (result && showResult) {
-      // Auto-close after 5 seconds
-      const timer = setTimeout(() => {
+        console.log('Auto-closing practice session...');
         onClose();
       }, 5000);
       return () => clearTimeout(timer);

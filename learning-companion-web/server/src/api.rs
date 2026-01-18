@@ -1,8 +1,11 @@
 use crate::AppState;
-use anyhow::Result;
 use axum::{extract::Path, extract::State, response::Json};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::sync::Arc;
+
+// Import ModuleState from main
+use crate::ModuleState;
 
 pub async fn get_modules(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let project_path = std::path::Path::new(&state.project_path);
@@ -21,6 +24,26 @@ pub async fn get_modules(State(state): State<Arc<AppState>>) -> Json<serde_json:
                 let has_checklist = module_path.join("自检清单.md").exists();
 
                 let display_name = extract_module_name(&name);
+
+                // Get or create module state
+                let module_state = {
+                    let mut states = state.module_states.lock().await;
+                    states.get(&name).cloned().unwrap_or_else(|| {
+                        // Initialize with empty tasks
+                        let mut tasks_completed = std::collections::HashMap::new();
+                        tasks_completed.insert("concept".to_string(), false);
+                        tasks_completed.insert("examples".to_string(), false);
+                        tasks_completed.insert("exercises".to_string(), false);
+                        tasks_completed.insert("project".to_string(), false);
+                        tasks_completed.insert("checklist".to_string(), false);
+
+                        ModuleState {
+                            progress: 0.0,
+                            tasks_completed,
+                        }
+                    })
+                };
+
                 modules.push(serde_json::json!({
                     "id": name.clone(),
                     "name": display_name,
@@ -28,13 +51,13 @@ pub async fn get_modules(State(state): State<Arc<AppState>>) -> Json<serde_json:
                     "has_exercises": has_exercises,
                     "has_tests": has_tests,
                     "has_checklist": has_checklist,
-                    "progress": 0.0,
+                    "progress": module_state.progress,
                     "tasks": {
-                        "concept": false,
-                        "examples": false,
-                        "exercises": false,
-                        "project": false,
-                        "checklist": false,
+                        "concept": module_state.tasks_completed.get("concept").copied().unwrap_or(false),
+                        "examples": module_state.tasks_completed.get("examples").copied().unwrap_or(false),
+                        "exercises": module_state.tasks_completed.get("exercises").copied().unwrap_or(false),
+                        "project": module_state.tasks_completed.get("project").copied().unwrap_or(false),
+                        "checklist": module_state.tasks_completed.get("checklist").copied().unwrap_or(false),
                     },
                 }));
             }
@@ -51,11 +74,11 @@ pub struct UpdateProgressBody {
 }
 
 pub async fn update_progress(
-    Path(_module_id): Path<String>,
-    State(_state): State<Arc<AppState>>,
+    Path(module_id): Path<String>,
+    State(state): State<Arc<AppState>>,
     Json(body): Json<UpdateProgressBody>,
 ) -> Json<serde_json::Value> {
-    let _increase = match body.task_type.as_str() {
+    let increase = match body.task_type.as_str() {
         "concept" => 15.0,
         "examples" => 15.0,
         "exercises" => 30.0,
@@ -64,9 +87,40 @@ pub async fn update_progress(
         _ => return Json(serde_json::json!({"error": "Invalid task type"})),
     };
 
+    // Update module state
+    let mut states = state.module_states.lock().await;
+    let module_state = states.entry(module_id.clone()).or_insert_with(|| {
+        // Initialize with empty tasks
+        let mut tasks_completed = std::collections::HashMap::new();
+        tasks_completed.insert("concept".to_string(), false);
+        tasks_completed.insert("examples".to_string(), false);
+        tasks_completed.insert("exercises".to_string(), false);
+        tasks_completed.insert("project".to_string(), false);
+        tasks_completed.insert("checklist".to_string(), false);
+
+        ModuleState {
+            progress: 0.0,
+            tasks_completed,
+        }
+    });
+
+    // Mark task as completed
+    module_state
+        .tasks_completed
+        .insert(body.task_type.clone(), true);
+
+    // Calculate progress based on completed tasks
+    let completed_tasks = module_state
+        .tasks_completed
+        .values()
+        .filter(|&&v| v)
+        .count();
+    let total_tasks = module_state.tasks_completed.len();
+    module_state.progress = (completed_tasks as f32 / total_tasks as f32) * 100.0;
+
     Json(serde_json::json!({
         "success": true,
-        "mastery": 15.0
+        "mastery": module_state.progress
     }))
 }
 

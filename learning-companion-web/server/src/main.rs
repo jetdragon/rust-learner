@@ -5,13 +5,24 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+#[derive(Clone)]
 pub struct AppState {
     pub project_path: String,
+    // In-memory storage for module progress and tasks
+    pub module_states: Arc<Mutex<HashMap<String, ModuleState>>>,
+}
+
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct ModuleState {
+    pub progress: f32,
+    pub tasks_completed: HashMap<String, bool>,
 }
 
 #[tokio::main]
@@ -21,7 +32,10 @@ async fn main() -> Result<()> {
 
     let project_path = std::env::var("PROJECT_PATH").unwrap_or_else(|_| "..".to_string());
 
-    let app_state = Arc::new(AppState { project_path });
+    let app_state = Arc::new(AppState {
+        project_path,
+        module_states: Arc::new(Mutex::new(HashMap::new())),
+    });
 
     let app = Router::new()
         .route("/api/modules", get(api::get_modules))
