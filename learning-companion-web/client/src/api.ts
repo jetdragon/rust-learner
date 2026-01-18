@@ -20,6 +20,21 @@ export const modulesApi = {
     const response = await api.post(`/modules/${moduleId}/progress`, { task_type: taskType });
     return response.data;
   },
+
+  getContent: async (moduleId: string, contentType: string): Promise<{ content: string }> => {
+    const response = await api.get<{ content: string }>(`/modules/${moduleId}/content/${contentType}`);
+    return response.data;
+  },
+
+  listExamples: async (moduleId: string): Promise<{ examples: string[] }> => {
+    const response = await api.get<{ examples: string[] }>(`/modules/${moduleId}/examples`);
+    return response.data;
+  },
+
+  getExampleContent: async (moduleId: string, filename: string): Promise<{ content: string }> => {
+    const response = await api.get<{ content: string }>(`/modules/${moduleId}/examples/${filename}`);
+    return response.data;
+  },
 };
 
 export const practiceApi = {

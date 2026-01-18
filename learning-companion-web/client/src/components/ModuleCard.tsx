@@ -5,16 +5,47 @@ interface ModuleCardProps {
   module: LearningModule;
   onUpdateProgress: (moduleId: string, taskType: string) => void;
   onStartPractice: (moduleId: string) => void;
+  onViewContent: (moduleId: string, contentType: string) => void;
 }
 
-export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress, onStartPractice }) => {
+export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress, onStartPractice, onViewContent }) => {
   const taskLabels: (keyof ModuleTasks)[] = ['concept', 'examples', 'exercises', 'project', 'checklist'];
   const taskNames = {
-    concept: '概念学习',
-    examples: '代码示例',
-    exercises: '练习题',
-    project: '综合练习',
-    checklist: '自检通过',
+    concept: '📖 概念学习',
+    examples: '💻 代码示例',
+    exercises: '✏️ 练习题',
+    project: '📦 综合练习',
+    checklist: '✅ 自检通过',
+  };
+
+  const getContentType = (task: keyof ModuleTasks): string => {
+    switch (task) {
+      case 'concept':
+        return 'readme';
+      case 'exercises':
+        return 'exercises';
+      case 'project':
+        return 'project';
+      case 'examples':
+      case 'checklist':
+      default:
+        return task as string;
+    }
+  };
+
+  const handleTaskClick = (task: keyof ModuleTasks) => {
+    // View content first
+    const contentType = getContentType(task);
+    if (contentType === 'examples') {
+      onViewContent(module.id, 'examples'); // List examples
+    } else {
+      onViewContent(module.id, contentType);
+    }
+    
+    // Then update progress (only if not already completed)
+    if (!module.tasks[task]) {
+      onUpdateProgress(module.id, task);
+    }
   };
 
   return (
@@ -47,20 +78,21 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress
       <div className="space-y-3">
         <h4 className="font-semibold text-warm-700 mb-3">学习任务</h4>
         {taskLabels.map((task) => (
-          <div key={task} className="flex items-center justify-between p-3 bg-warm-50 rounded-lg hover:bg-warm-100 transition-colors">
+          <button
+            key={task}
+            onClick={() => handleTaskClick(task)}
+            className="w-full flex items-center justify-between p-3 bg-warm-50 rounded-lg hover:bg-warm-100 transition-colors text-left"
+          >
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={module.tasks[task]}
-                onChange={() => onUpdateProgress(module.id, task)}
-                className="w-5 h-5 text-warm-600 rounded focus:ring-warm-500"
-              />
+              <span className={module.tasks[task] ? 'text-green-600 text-xl' : 'text-warm-400 text-xl'}>
+                {module.tasks[task] ? '✅' : '⭕'}
+              </span>
               <span className={module.tasks[task] ? 'line-through text-warm-400' : 'text-warm-800'}>
                 {taskNames[task]}
               </span>
             </div>
-            {module.tasks[task] && <span className="text-green-600">✓</span>}
-          </div>
+            {module.tasks[task] && <span className="text-green-600 text-sm">已完成</span>}
+          </button>
         ))}
       </div>
 

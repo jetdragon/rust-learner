@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ModuleCard } from './components/ModuleCard';
 import { AchievementsPanel } from './components/AchievementsPanel';
 import { PracticeSession } from './components/PracticeSession';
+import { ContentViewer } from './components/ContentViewer';
 import { modulesApi, practiceApi, achievementsApi, exportApi } from './api';
 import type { LearningModule, PracticeQuestion, Achievement, PracticeResult } from './types';
 
@@ -13,6 +14,9 @@ function App() {
   const [practiceQuestions, setPracticeQuestions] = useState<PracticeQuestion[]>([]);
   const [practiceResult, setPracticeResult] = useState<PracticeResult | undefined>();
   const [loading, setLoading] = useState(true);
+  const [showContentViewer, setShowContentViewer] = useState(false);
+  const [currentModule, setCurrentModule] = useState<LearningModule | null>(null);
+  const [currentContentType, setCurrentContentType] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -81,6 +85,21 @@ function App() {
       console.error('Failed to export:', error);
       alert('导出失败，请重试');
     }
+  };
+
+  const handleViewContent = (moduleId: string, contentType: string) => {
+    const module = modules.find(m => m.id === moduleId);
+    if (module) {
+      setCurrentModule(module);
+      setCurrentContentType(contentType);
+      setShowContentViewer(true);
+    }
+  };
+
+  const handleCloseContentViewer = () => {
+    setShowContentViewer(false);
+    setCurrentModule(null);
+    setCurrentContentType('');
   };
 
   const completedModules = modules.filter(m => m.progress >= 95).length;
@@ -170,6 +189,7 @@ function App() {
               module={module}
               onUpdateProgress={handleUpdateProgress}
               onStartPractice={handleStartPractice}
+              onViewContent={handleViewContent}
             />
           ))}
         </div>
@@ -188,6 +208,14 @@ function App() {
         <AchievementsPanel
           achievements={achievements}
           onClose={() => setShowAchievements(false)}
+        />
+      )}
+
+      {showContentViewer && currentModule && (
+        <ContentViewer
+          module={currentModule}
+          contentType={currentContentType}
+          onClose={handleCloseContentViewer}
         />
       )}
 

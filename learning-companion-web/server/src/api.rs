@@ -163,6 +163,123 @@ pub async fn export_data() -> Json<serde_json::Value> {
     Json(export_data)
 }
 
+pub async fn get_module_content(
+    Path((module_id, content_type)): Path<(String, String)>,
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let project_path = std::path::Path::new(&state.project_path);
+    let module_path = project_path.join(&module_id);
+
+    if !module_path.exists() || !module_path.is_dir() {
+        return Json(serde_json::json!({
+            "error": "Module not found",
+            "module_id": module_id
+        }));
+    }
+
+    let content = match content_type.as_str() {
+        "readme" => {
+            let readme_path = module_path.join("README.md");
+            if readme_path.exists() {
+                std::fs::read_to_string(readme_path)
+                    .unwrap_or_else(|_| "# No README content found".to_string())
+            } else {
+                "# No README.md file found for this module".to_string()
+            }
+        }
+        "exercises" => {
+            let exercises_path = module_path.join("exercises.md");
+            if exercises_path.exists() {
+                std::fs::read_to_string(exercises_path)
+                    .unwrap_or_else(|_| "# No exercises content found".to_string())
+            } else {
+                "# No exercises.md file found for this module".to_string()
+            }
+        }
+        "project" => {
+            // For project, return a description
+            format!(
+                "# 综合练习 - {}\n\n完成本模块的综合练习项目，巩固所学知识。\n\n查看项目文件并开始实践！",
+                extract_module_name(&module_id)
+            )
+        }
+        _ => {
+            return Json(serde_json::json!({
+                "error": "Invalid content type",
+                "valid_types": ["readme", "exercises", "project"]
+            }));
+        }
+    };
+
+    Json(serde_json::json!({
+        "module_id": module_id,
+        "content_type": content_type,
+        "content": content
+    }))
+}
+
+pub async fn list_examples(
+    Path(module_id): Path<String>,
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let project_path = std::path::Path::new(&state.project_path);
+    let module_path = project_path.join(&module_id);
+    let examples_dir = module_path.join("examples");
+
+    if !examples_dir.exists() || !examples_dir.is_dir() {
+        return Json(serde_json::json!({
+            "module_id": module_id,
+            "examples": Vec::<String>::new()
+        }));
+    }
+
+    let mut examples = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(examples_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("rs") {
+                if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
+                    examples.push(filename.to_string());
+                }
+            }
+        }
+    }
+
+    examples.sort();
+
+    Json(serde_json::json!({
+        "module_id": module_id,
+        "examples": examples
+    }))
+}
+
+pub async fn get_example_content(
+    Path((module_id, filename)): Path<(String, String)>,
+    State(state): State<Arc<AppState>>,
+) -> Json<serde_json::Value> {
+    let project_path = std::path::Path::new(&state.project_path);
+    let module_path = project_path.join(&module_id);
+    let examples_dir = module_path.join("examples");
+    let file_path = examples_dir.join(&filename);
+
+    if !file_path.exists() || !file_path.is_file() {
+        return Json(serde_json::json!({
+            "error": "Example file not found",
+            "module_id": module_id,
+            "filename": filename
+        }));
+    }
+
+    let content = std::fs::read_to_string(&file_path)
+        .unwrap_or_else(|_| "// Could not read file content".to_string());
+
+    Json(serde_json::json!({
+        "module_id": module_id,
+        "filename": filename,
+        "content": content
+    }))
+}
+
 fn extract_module_name(id: &str) -> String {
     let names = vec![
         ("module-01-basics", "01-基础入门"),
