@@ -16,6 +16,9 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load .env file
+    dotenv::dotenv().ok();
+
     let project_path = std::env::var("PROJECT_PATH").unwrap_or_else(|_| "..".to_string());
 
     let app_state = Arc::new(AppState { project_path });
