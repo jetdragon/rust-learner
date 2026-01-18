@@ -2,10 +2,10 @@
 //!
 //! 扫描 Rust 学习仓库，解析进度文件和模块结构
 
-use std::path::{Path, PathBuf};
-use std::fs;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use anyhow::{Result, Context};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// 学习模块信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -125,16 +125,17 @@ impl LearningRepo {
 
         for line in lines {
             // 检测模块标题
-            if line.contains("### ") && (line.contains("-基础入门")
-                || line.contains("-所有权系统")
-                || line.contains("-结构体")
-                || line.contains("-模式匹配")
-                || line.contains("-错误处理")
-                || line.contains("-集合类型")
-                || line.contains("-泛型")
-                || line.contains("-生命周期")
-                || line.contains("-并发编程")
-                || line.contains("-实战项目"))
+            if line.contains("### ")
+                && (line.contains("-基础入门")
+                    || line.contains("-所有权系统")
+                    || line.contains("-结构体")
+                    || line.contains("-模式匹配")
+                    || line.contains("-错误处理")
+                    || line.contains("-集合类型")
+                    || line.contains("-泛型")
+                    || line.contains("-生命周期")
+                    || line.contains("-并发编程")
+                    || line.contains("-实战项目"))
             {
                 if let Some(module) = current_module.take() {
                     progress_list.push(module);
@@ -186,9 +187,7 @@ impl LearningRepo {
             return 0.0;
         }
 
-        let completed = self.progress.iter()
-            .filter(|p| p.status == "[x]")
-            .count();
+        let completed = self.progress.iter().filter(|p| p.status == "[x]").count();
 
         (completed as f32 / self.modules.len() as f32) * 100.0
     }

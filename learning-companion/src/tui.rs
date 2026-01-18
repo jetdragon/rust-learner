@@ -26,14 +26,38 @@ use crate::repo::{LearningRepo, ModuleProgress};
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppState {
     MainMenu,
-    Dashboard { selected_module: usize },
-    ModuleDetail { selected_module: usize, selected_task: usize, focus_area: ModuleFocus },
-    UpdateProgress { selected_module: usize, selected_task: usize, focus_area: FocusArea },
-    UpdateProgressConfirm { selected_module: usize, selected_task: usize, confirmed: bool },
-    Practice { selected_module: usize, question_count: usize, focus_field: PracticeField },
-    PracticeSession { session: PracticeSession },
+    Dashboard {
+        selected_module: usize,
+    },
+    ModuleDetail {
+        selected_module: usize,
+        selected_task: usize,
+        focus_area: ModuleFocus,
+    },
+    UpdateProgress {
+        selected_module: usize,
+        selected_task: usize,
+        focus_area: FocusArea,
+    },
+    UpdateProgressConfirm {
+        selected_module: usize,
+        selected_task: usize,
+        confirmed: bool,
+    },
+    Practice {
+        selected_module: usize,
+        question_count: usize,
+        focus_field: PracticeField,
+    },
+    PracticeSession {
+        session: PracticeSession,
+    },
     Achievements,
-    RemindSetup { hour: u8, minute: u8, focus_field: TimeField },
+    RemindSetup {
+        hour: u8,
+        minute: u8,
+        focus_field: TimeField,
+    },
     Export,
     FileViewer {
         file_path: String,
@@ -241,13 +265,14 @@ impl App {
 
     /// 仪表板按键处理
     fn handle_dashboard_key(&mut self, key: KeyCode) {
-        if let AppState::Dashboard { ref mut selected_module } = self.state {
+        if let AppState::Dashboard {
+            ref mut selected_module,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    // 返回主菜单
-                    self.state = AppState::MainMenu;
-                    self.state_stack.clear();
-                    self.update_help_text();
+                    // 返回主菜单（使用状态栈）
+                    self.pop_state();
                 }
                 KeyCode::Up => {
                     if *selected_module > 0 {
@@ -264,22 +289,20 @@ impl App {
                 KeyCode::Enter | KeyCode::Char('u') | KeyCode::Char('U') => {
                     // 进入更新进度界面，选中的模块
                     let module = *selected_module;
-                    self.state = AppState::UpdateProgress {
+                    self.push_state(AppState::UpdateProgress {
                         selected_module: module,
                         selected_task: 0,
                         focus_area: FocusArea::ModuleList,
-                    };
-                    self.update_help_text();
+                    });
                 }
                 KeyCode::Char('p') | KeyCode::Char('P') => {
                     // 进入练习界面
                     let module = *selected_module;
-                    self.state = AppState::Practice {
+                    self.push_state(AppState::Practice {
                         selected_module: module,
                         question_count: 5,
                         focus_field: PracticeField::Module,
-                    };
-                    self.update_help_text();
+                    });
                 }
                 KeyCode::Char('a') | KeyCode::Char('A') => {
                     // 查看成就
@@ -288,12 +311,11 @@ impl App {
                 KeyCode::Char('o') | KeyCode::Char('O') => {
                     // 进入模块详情界面
                     let module = *selected_module;
-                    self.state = AppState::ModuleDetail {
+                    self.push_state(AppState::ModuleDetail {
                         selected_module: module,
                         selected_task: 0,
                         focus_area: ModuleFocus::TaskList,
-                    };
-                    self.update_help_text();
+                    });
                 }
                 _ => {}
             }
@@ -302,17 +324,16 @@ impl App {
 
     /// 模块详情按键处理
     fn handle_module_detail_key(&mut self, key: KeyCode) {
-        if let AppState::ModuleDetail { ref mut selected_module, ref mut selected_task, ref mut focus_area } = self.state {
+        if let AppState::ModuleDetail {
+            ref mut selected_module,
+            ref mut selected_task,
+            ref mut focus_area,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    // 返回仪表板
-                    if let Some(repo) = &self.repo {
-                        let module = *selected_module;
-                        self.state = AppState::Dashboard { selected_module: module };
-                    } else {
-                        self.state = AppState::MainMenu;
-                    }
-                    self.update_help_text();
+                    // 返回仪表板（使用状态栈）
+                    self.pop_state();
                 }
                 KeyCode::Tab => {
                     *focus_area = match focus_area {
@@ -356,7 +377,13 @@ impl App {
                     // 在TUI内打开当前任务对应的文件
                     if let Some(repo) = &self.repo {
                         if let Some(module) = repo.modules.get(*selected_module) {
-                            let task_files = ["README.md", "examples", "exercises.md", "tests", "自检清单.md"];
+                            let task_files = [
+                                "README.md",
+                                "examples",
+                                "exercises.md",
+                                "tests",
+                                "自检清单.md",
+                            ];
                             if let Some(file) = task_files.get(*selected_task) {
                                 let path = module.directory.join(file);
 
@@ -366,36 +393,46 @@ impl App {
                                 // 尝试读取文件内容
                                 match std::fs::read_to_string(&path) {
                                     Ok(content) => {
-                                        // 切换到文件查看器状态
-                                        self.state = AppState::FileViewer {
+                                        // 切换到文件查看器状态（使用状态栈）
+                                        self.push_state(AppState::FileViewer {
                                             file_path: file.to_string(),
                                             content,
                                             scroll_offset: 0,
                                             return_state: Box::new(current_state),
-                                        };
-                                        self.update_help_text();
+                                        });
                                     }
                                     Err(_) => {
                                         // 如果是目录，显示目录内容
                                         if path.is_dir() {
                                             let mut dir_content = String::new();
-                                            dir_content.push_str(&format!("目录: {}\n\n", path.display()));
+                                            dir_content
+                                                .push_str(&format!("目录: {}\n\n", path.display()));
 
                                             if let Ok(entries) = std::fs::read_dir(&path) {
                                                 for entry in entries.flatten() {
-                                                    let name = entry.file_name().to_string_lossy().to_string();
-                                                    let file_type = if entry.path().is_dir() { "[DIR]" } else { "[FILE]" };
-                                                    dir_content.push_str(&format!("{} {}\n", file_type, name));
+                                                    let name = entry
+                                                        .file_name()
+                                                        .to_string_lossy()
+                                                        .to_string();
+                                                    let file_type = if entry.path().is_dir() {
+                                                        "[DIR]"
+                                                    } else {
+                                                        "[FILE]"
+                                                    };
+                                                    dir_content.push_str(&format!(
+                                                        "{} {}\n",
+                                                        file_type, name
+                                                    ));
                                                 }
                                             }
 
-                                            self.state = AppState::FileViewer {
+                                            // 切换到文件查看器状态（使用状态栈）
+                                            self.push_state(AppState::FileViewer {
                                                 file_path: format!("{}/ (目录)", file),
                                                 content: dir_content,
                                                 scroll_offset: 0,
                                                 return_state: Box::new(current_state),
-                                            };
-                                            self.update_help_text();
+                                            });
                                         } else {
                                             self.show_message(format!("❌ 无法读取文件: {}", file));
                                         }
@@ -413,15 +450,12 @@ impl App {
                             let module_idx = *selected_module;
                             let task_idx = *selected_task;
 
-                            // 保存当前状态并切换到确认状态
-                            let current_state = self.state.clone();
-                            self.state = AppState::UpdateProgressConfirm {
+                            // 保存当前状态并切换到确认状态（使用状态栈）
+                            self.push_state(AppState::UpdateProgressConfirm {
                                 selected_module: module_idx,
                                 selected_task: task_idx,
                                 confirmed: false,
-                            };
-                            self.state_stack.push(current_state);
-                            self.update_help_text();
+                            });
                         }
                     }
                 }
@@ -443,19 +477,16 @@ impl App {
 
     /// 更新进度按键处理
     fn handle_update_progress_key(&mut self, key: KeyCode) {
-        if let AppState::UpdateProgress { ref mut selected_module, ref mut selected_task, ref mut focus_area } = self.state {
+        if let AppState::UpdateProgress {
+            ref mut selected_module,
+            ref mut selected_task,
+            ref mut focus_area,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    // 返回模块详情界面
-                    let module = *selected_module;
-                    let task = *selected_task;
-                    self.state = AppState::ModuleDetail {
-                        selected_module: module,
-                        selected_task: task,
-                        focus_area: ModuleFocus::TaskList,
-                    };
-                    self.state_stack.clear(); // 清空状态栈，避免累积
-                    self.update_help_text();
+                    // 返回模块详情界面（使用状态栈）
+                    self.pop_state();
                 }
                 KeyCode::Tab | KeyCode::Char(' ') => {
                     *focus_area = match focus_area {
@@ -498,15 +529,14 @@ impl App {
                     }
                 }
                 KeyCode::Enter => {
-                    // 进入确认界面
+                    // 进入确认界面（使用状态栈）
                     let module = *selected_module;
                     let task = *selected_task;
-                    self.state = AppState::UpdateProgressConfirm {
+                    self.push_state(AppState::UpdateProgressConfirm {
                         selected_module: module,
                         selected_task: task,
                         confirmed: false,
-                    };
-                    self.update_help_text();
+                    });
                 }
                 _ => {}
             }
@@ -515,7 +545,12 @@ impl App {
 
     /// 更新进度确认按键处理
     fn handle_update_progress_confirm_key(&mut self, key: KeyCode) {
-        if let AppState::UpdateProgressConfirm { ref mut selected_module, ref mut selected_task, ref mut confirmed } = self.state {
+        if let AppState::UpdateProgressConfirm {
+            ref mut selected_module,
+            ref mut selected_task,
+            ref mut confirmed,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
                     // 返回上级状态（UpdateProgress）
@@ -523,26 +558,26 @@ impl App {
                     self.update_help_text();
                 }
                 KeyCode::Left => {
-                    *confirmed = true;   // Left key selects "Yes" (left option)
+                    *confirmed = true; // Left key selects "Yes" (left option)
                 }
                 KeyCode::Right => {
-                    *confirmed = false;  // Right key selects "No" (right option)
+                    *confirmed = false; // Right key selects "No" (right option)
                 }
                 KeyCode::Tab | KeyCode::Char(' ') => {
-                    *confirmed = true;   // Tab and Space still select "Yes"
+                    *confirmed = true; // Tab and Space still select "Yes"
                 }
                 KeyCode::Enter => {
                     if *confirmed {
                         // 确认保存
                         if let Some(repo) = &self.repo {
                             if let Some(module) = repo.modules.get(*selected_module) {
-                                let task_names = ["concept", "examples", "exercises", "project", "checklist"];
+                                let task_names =
+                                    ["concept", "examples", "exercises", "project", "checklist"];
                                 let task = task_names.get(*selected_task).unwrap_or(&"concept");
-                                let _ = crate::progress::update_task_status(repo, &module.id, task);
-                                let module_name = module.name.clone();
-                                let task_idx = *selected_task;
-                                self.show_message(format!("✅ 已更新 {} 的 {} 任务", module_name,
-                                    ["概念学习", "代码示例", "练习题", "综合练习", "自检"].get(task_idx).unwrap_or(&"")));
+                                match crate::progress::update_task_status(repo, &module.id, task) {
+                                    Ok(msg) => self.show_message(msg),
+                                    Err(_) => self.show_message("❌ 更新失败，请重试".to_string()),
+                                }
                             }
                         }
                     }
@@ -557,17 +592,16 @@ impl App {
 
     /// 练习按键处理
     fn handle_practice_key(&mut self, key: KeyCode) {
-        if let AppState::Practice { ref mut selected_module, ref mut question_count, ref mut focus_field } = self.state {
+        if let AppState::Practice {
+            ref mut selected_module,
+            ref mut question_count,
+            ref mut focus_field,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    // 返回仪表板
-                    if let Some(repo) = &self.repo {
-                        let module = *selected_module;
-                        self.state = AppState::Dashboard { selected_module: module };
-                    } else {
-                        self.state = AppState::MainMenu;
-                    }
-                    self.update_help_text();
+                    // 返回仪表板（使用状态栈）
+                    self.pop_state();
                 }
                 KeyCode::Tab => {
                     *focus_field = match focus_field {
@@ -630,9 +664,8 @@ impl App {
                                     show_result: false,
                                 };
 
-                                // 切换到练习会话状态
-                                self.state = AppState::PracticeSession { session };
-                                self.update_help_text();
+                                // 切换到练习会话状态（使用状态栈）
+                                self.push_state(AppState::PracticeSession { session });
                             } else {
                                 self.show_message("❌ 没有可用的练习题".to_string());
                             }
@@ -648,10 +681,8 @@ impl App {
     fn handle_achievements_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
-                // 返回主菜单
-                self.state = AppState::MainMenu;
-                self.state_stack.clear();
-                self.update_help_text();
+                // 返回主菜单（使用状态栈）
+                self.pop_state();
             }
             _ => {}
         }
@@ -659,13 +690,16 @@ impl App {
 
     /// 提醒设置按键处理
     fn handle_remind_setup_key(&mut self, key: KeyCode) {
-        if let AppState::RemindSetup { ref mut hour, ref mut minute, ref mut focus_field } = self.state {
+        if let AppState::RemindSetup {
+            ref mut hour,
+            ref mut minute,
+            ref mut focus_field,
+        } = self.state
+        {
             match key {
                 KeyCode::Esc | KeyCode::Char('q') => {
-                    // 返回主菜单
-                    self.state = AppState::MainMenu;
-                    self.state_stack.clear();
-                    self.update_help_text();
+                    // 返回主菜单（使用状态栈）
+                    self.pop_state();
                 }
                 KeyCode::Tab => {
                     *focus_field = match focus_field {
@@ -673,27 +707,21 @@ impl App {
                         TimeField::Minute => TimeField::Hour,
                     };
                 }
-                KeyCode::Up => {
-                    match focus_field {
-                        TimeField::Hour => *hour = (*hour + 1).min(23),
-                        TimeField::Minute => *minute = (*minute + 1).min(59),
-                    }
-                }
-                KeyCode::Down => {
-                    match focus_field {
-                        TimeField::Hour => *hour = hour.saturating_sub(1),
-                        TimeField::Minute => *minute = minute.saturating_sub(1),
-                    }
-                }
+                KeyCode::Up => match focus_field {
+                    TimeField::Hour => *hour = (*hour + 1).min(23),
+                    TimeField::Minute => *minute = (*minute + 1).min(59),
+                },
+                KeyCode::Down => match focus_field {
+                    TimeField::Hour => *hour = hour.saturating_sub(1),
+                    TimeField::Minute => *minute = minute.saturating_sub(1),
+                },
                 KeyCode::Enter => {
                     let _ = crate::notify::set_reminder(*hour, *minute);
                     let h = *hour;
                     let m = *minute;
                     self.show_message(format!("⏰ 已设置提醒时间为 {:02}:{:02}", h, m));
-                    // 返回主菜单
-                    self.state = AppState::MainMenu;
-                    self.state_stack.clear();
-                    self.update_help_text();
+                    // 返回主菜单（使用状态栈）
+                    self.pop_state();
                 }
                 _ => {}
             }
@@ -704,10 +732,8 @@ impl App {
     fn handle_export_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
-                // 返回主菜单
-                self.state = AppState::MainMenu;
-                self.state_stack.clear();
-                self.update_help_text();
+                // 返回主菜单（使用状态栈）
+                self.pop_state();
             }
             KeyCode::Enter => {
                 let _ = crate::storage::export_data();
@@ -721,18 +747,18 @@ impl App {
     fn handle_practice_session_key(&mut self, key: KeyCode) {
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
-                // 退出练习会话，返回练习配置界面
-                if let AppState::PracticeSession { .. } = self.state {
-                    self.state = AppState::Practice {
-                        selected_module: 0,
-                        question_count: 5,
-                        focus_field: PracticeField::Module,
-                    };
-                    self.update_help_text();
-                }
+                // 退出练习会话，返回练习配置界面（使用状态栈，保留之前的选择）
+                self.pop_state();
             }
-            KeyCode::Char('1') | KeyCode::Char('2') | KeyCode::Char('3') | KeyCode::Char('4') | KeyCode::Char('5') |
-            KeyCode::Char('6') | KeyCode::Char('7') | KeyCode::Char('8') | KeyCode::Char('9') => {
+            KeyCode::Char('1')
+            | KeyCode::Char('2')
+            | KeyCode::Char('3')
+            | KeyCode::Char('4')
+            | KeyCode::Char('5')
+            | KeyCode::Char('6')
+            | KeyCode::Char('7')
+            | KeyCode::Char('8')
+            | KeyCode::Char('9') => {
                 // 选择答案
                 if let AppState::PracticeSession { ref mut session } = self.state {
                     let answer_index = match key {
@@ -777,10 +803,14 @@ impl App {
                 if let AppState::PracticeSession { ref mut session } = self.state {
                     if session.current_index == session.questions.len() - 1 {
                         // 计算得分并显示结果
-                        let correct_count = session.answers.iter()
+                        let correct_count = session
+                            .answers
+                            .iter()
                             .zip(session.questions.iter())
                             .filter(|(answer, question)| {
-                                answer.map(|a| a.to_string() == question.correct_answer).unwrap_or(false)
+                                answer
+                                    .map(|a| a.to_string() == question.correct_answer)
+                                    .unwrap_or(false)
                             })
                             .count();
 
@@ -791,13 +821,8 @@ impl App {
                             score, correct_count, total
                         );
 
-                        // 返回练习配置界面
-                        self.state = AppState::Practice {
-                            selected_module: 0,
-                            question_count: 5,
-                            focus_field: PracticeField::Module,
-                        };
-                        self.update_help_text();
+                        // 返回练习配置界面（使用状态栈，保留之前的选择）
+                        self.pop_state();
 
                         // 显示消息（在状态切换后）
                         self.show_message(msg);
@@ -822,26 +847,44 @@ impl App {
             }
             KeyCode::Up => {
                 // 向上滚动
-                if let AppState::FileViewer { ref mut scroll_offset, .. } = self.state {
+                if let AppState::FileViewer {
+                    ref mut scroll_offset,
+                    ..
+                } = self.state
+                {
                     *scroll_offset = scroll_offset.saturating_sub(1);
                 }
             }
             KeyCode::Down => {
                 // 向下滚动
-                if let AppState::FileViewer { ref mut scroll_offset, ref content, .. } = self.state {
+                if let AppState::FileViewer {
+                    ref mut scroll_offset,
+                    ref content,
+                    ..
+                } = self.state
+                {
                     let max_offset = content.lines().count().saturating_sub(20);
                     *scroll_offset = (*scroll_offset + 1).min(max_offset);
                 }
             }
             KeyCode::PageUp => {
                 // 向上翻页
-                if let AppState::FileViewer { ref mut scroll_offset, .. } = self.state {
+                if let AppState::FileViewer {
+                    ref mut scroll_offset,
+                    ..
+                } = self.state
+                {
                     *scroll_offset = scroll_offset.saturating_sub(20);
                 }
             }
             KeyCode::PageDown => {
                 // 向下翻页
-                if let AppState::FileViewer { ref mut scroll_offset, ref content, .. } = self.state {
+                if let AppState::FileViewer {
+                    ref mut scroll_offset,
+                    ref content,
+                    ..
+                } = self.state
+                {
                     let max_offset = content.lines().count().saturating_sub(20);
                     *scroll_offset = (*scroll_offset + 20).min(max_offset);
                 }
@@ -873,15 +916,27 @@ impl App {
     fn update_help_text(&mut self) {
         self.help_text = match self.state {
             AppState::MainMenu => "↑↓ 移动 | Enter 确认 | q 退出".to_string(),
-            AppState::Dashboard { .. } => "↑↓ 选择模块 | O 打开详情 | Enter 更新 | P 练习 | Esc 返回".to_string(),
-            AppState::ModuleDetail { .. } => "↑↓ 选择任务 | O 打开文件 | Space 标记完成 | Tab 切换 | Esc 返回".to_string(),
-            AppState::UpdateProgress { .. } => "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回模块详情".to_string(),
+            AppState::Dashboard { .. } => {
+                "↑↓ 选择模块 | O 打开详情 | Enter 更新 | P 练习 | Esc 返回".to_string()
+            }
+            AppState::ModuleDetail { .. } => {
+                "↑↓ 选择任务 | O 打开文件 | Space 标记完成 | Tab 切换 | Esc 返回".to_string()
+            }
+            AppState::UpdateProgress { .. } => {
+                "↑↓ 选择 | Tab 切换 | Enter 确认 | Esc 返回模块详情".to_string()
+            }
             AppState::UpdateProgressConfirm { .. } => "←→ 选择 | Enter 确认 | Esc 返回".to_string(),
-            AppState::Practice { .. } => "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回仪表板".to_string(),
+            AppState::Practice { .. } => {
+                "↑↓ 选择 | Tab 切换 | Enter 开始 | Esc 返回仪表板".to_string()
+            }
             AppState::Achievements => "Esc 返回主菜单".to_string(),
-            AppState::RemindSetup { .. } => "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string(),
+            AppState::RemindSetup { .. } => {
+                "↑↓ 调整时间 | Tab 切换 | Enter 确认 | Esc 返回".to_string()
+            }
             AppState::Export => "Enter 导出 | Esc 返回".to_string(),
-            AppState::PracticeSession { .. } => "1-9 选择答案 | ←→ 切换题目 | Enter 下一题/完成 | Esc 退出".to_string(),
+            AppState::PracticeSession { .. } => {
+                "1-9 选择答案 | ←→ 切换题目 | Enter 下一题/完成 | Esc 退出".to_string()
+            }
             AppState::FileViewer { .. } => "↑↓ 滚动 | PgUp/PgDn 翻页 | Esc 退出".to_string(),
         };
     }
@@ -960,7 +1015,14 @@ fn ui(f: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)].as_ref())
+        .constraints(
+            [
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ]
+            .as_ref(),
+        )
         .split(size);
 
     // 绘制标题
@@ -970,25 +1032,78 @@ fn ui(f: &mut Frame, app: &mut App) {
     match &app.state {
         AppState::MainMenu => draw_main_menu(f, chunks[1], app),
         AppState::Dashboard { .. } => draw_dashboard(f, chunks[1], app),
-        AppState::ModuleDetail { selected_module, selected_task, focus_area } => {
-            draw_module_detail(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
+        AppState::ModuleDetail {
+            selected_module,
+            selected_task,
+            focus_area,
+        } => {
+            draw_module_detail(
+                f,
+                chunks[1],
+                app,
+                *selected_module,
+                *selected_task,
+                *focus_area,
+            );
         }
-        AppState::UpdateProgress { selected_module, selected_task, focus_area } => {
-            draw_update_progress(f, chunks[1], app, *selected_module, *selected_task, *focus_area);
+        AppState::UpdateProgress {
+            selected_module,
+            selected_task,
+            focus_area,
+        } => {
+            draw_update_progress(
+                f,
+                chunks[1],
+                app,
+                *selected_module,
+                *selected_task,
+                *focus_area,
+            );
         }
-        AppState::UpdateProgressConfirm { selected_module, selected_task, confirmed } => {
-            draw_update_progress_confirm(f, chunks[1], app, *selected_module, *selected_task, *confirmed);
+        AppState::UpdateProgressConfirm {
+            selected_module,
+            selected_task,
+            confirmed,
+        } => {
+            draw_update_progress_confirm(
+                f,
+                chunks[1],
+                app,
+                *selected_module,
+                *selected_task,
+                *confirmed,
+            );
         }
-        AppState::Practice { selected_module, question_count, focus_field } => {
-            draw_practice(f, chunks[1], app, *selected_module, *question_count, *focus_field);
+        AppState::Practice {
+            selected_module,
+            question_count,
+            focus_field,
+        } => {
+            draw_practice(
+                f,
+                chunks[1],
+                app,
+                *selected_module,
+                *question_count,
+                *focus_field,
+            );
         }
         AppState::Achievements => draw_achievements(f, chunks[1], app),
-        AppState::RemindSetup { hour, minute, focus_field } => {
+        AppState::RemindSetup {
+            hour,
+            minute,
+            focus_field,
+        } => {
             draw_remind_setup(f, chunks[1], *hour, *minute, *focus_field);
         }
         AppState::Export => draw_export(f, chunks[1]),
         AppState::PracticeSession { ref session } => draw_practice_session(f, chunks[1], session),
-        AppState::FileViewer { ref file_path, ref content, scroll_offset, .. } => draw_file_viewer(f, chunks[1], file_path, content, *scroll_offset),
+        AppState::FileViewer {
+            ref file_path,
+            ref content,
+            scroll_offset,
+            ..
+        } => draw_file_viewer(f, chunks[1], file_path, content, *scroll_offset),
     }
 
     // 绘制消息（如果有）
@@ -1005,7 +1120,11 @@ fn ui(f: &mut Frame, app: &mut App) {
 fn draw_header(f: &mut Frame, area: Rect, title: &str) {
     let title = Paragraph::new(Line::from(title.to_string()))
         .alignment(Alignment::Center)
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        );
     f.render_widget(title, area);
 }
 
@@ -1042,16 +1161,27 @@ fn generate_progress_bar(percent: u16, width: u16) -> String {
     let empty = width as u32 - filled;
     let fill_char = "█";
     let empty_char = "░";
-    format!("[{}{}] {}%", fill_char.repeat(filled as usize), empty_char.repeat(empty as usize), percent)
+    format!(
+        "[{}{}] {}%",
+        fill_char.repeat(filled as usize),
+        empty_char.repeat(empty as usize),
+        percent
+    )
 }
 
 /// 绘制主菜单
 fn draw_main_menu(f: &mut Frame, area: Rect, app: &mut App) {
     let mut menu_lines: Vec<Line> = Vec::new();
     for (i, item) in app.main_menu_items.iter().enumerate() {
-        let prefix = if i == app.main_menu_selected { ">> " } else { "   " };
+        let prefix = if i == app.main_menu_selected {
+            ">> "
+        } else {
+            "   "
+        };
         let style = if i == app.main_menu_selected {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Color::White)
         };
@@ -1094,7 +1224,10 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         let stats_lines = vec![
             Line::from("📊 学习进度仪表板"),
             Line::from(""),
-            Line::from(format!("总体完成度: {:.1}% ({}/{})", completion, completed, total)),
+            Line::from(format!(
+                "总体完成度: {:.1}% ({}/{})",
+                completion, completed, total
+            )),
             Line::from(progress_bar),
             Line::from(""),
             Line::from("快捷键: ↑↓ 选择模块 | O 详情 | P 练习 | A 成就"),
@@ -1132,7 +1265,9 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
             let prefix = if i == selected_module { ">> " } else { "   " };
             let content = format!("{} {} - {}/5 任务", status_icon, module.name, tasks_done);
             let style = if i == selected_module {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
@@ -1143,7 +1278,11 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
         }
 
         let module_paragraph = Paragraph::new(module_lines)
-            .block(Block::default().borders(Borders::ALL).title("学习模块 (↑↓ 选择)"))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("学习模块 (↑↓ 选择)"),
+            )
             .wrap(Wrap { trim: true });
         f.render_widget(module_paragraph, chunks[1]);
     } else {
@@ -1160,7 +1299,14 @@ fn draw_dashboard(f: &mut Frame, area: Rect, app: &App) {
 }
 
 /// 绘制模块详情界面
-fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, focus_area: ModuleFocus) {
+fn draw_module_detail(
+    f: &mut Frame,
+    area: Rect,
+    app: &App,
+    selected_module: usize,
+    selected_task: usize,
+    focus_area: ModuleFocus,
+) {
     if let Some(repo) = &app.repo {
         if let Some(module) = repo.modules.get(selected_module) {
             let progress = repo.get_module_progress(&module.id);
@@ -1188,10 +1334,16 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
                 } else {
                     false
                 };
-                let prefix = if i == selected_task && focus_area == ModuleFocus::TaskList { ">> " } else { "   " };
+                let prefix = if i == selected_task && focus_area == ModuleFocus::TaskList {
+                    ">> "
+                } else {
+                    "   "
+                };
                 let content = format!("[{}] {}", if is_done { 'x' } else { ' ' }, task_name);
                 let style = if i == selected_task && focus_area == ModuleFocus::TaskList {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::White)
                 };
@@ -1215,7 +1367,13 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
             ];
 
             // 添加文件可用性信息
-            let file_names = ["README.md", "examples/", "exercises.md", "tests/", "自检清单.md"];
+            let file_names = [
+                "README.md",
+                "examples/",
+                "exercises.md",
+                "tests/",
+                "自检清单.md",
+            ];
             let file_status = [
                 module.has_readme,
                 true, // examples always exists as directory
@@ -1240,7 +1398,9 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
 
             // 操作提示
             let action_style = if focus_area == ModuleFocus::Action {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Gray)
             };
@@ -1267,7 +1427,14 @@ fn draw_module_detail(f: &mut Frame, area: Rect, app: &App, selected_module: usi
 }
 
 /// 绘制更新进度界面
-fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, focus_area: FocusArea) {
+fn draw_update_progress(
+    f: &mut Frame,
+    area: Rect,
+    app: &App,
+    selected_module: usize,
+    selected_task: usize,
+    focus_area: FocusArea,
+) {
     if let Some(repo) = &app.repo {
         // 创建水平布局
         let chunks = Layout::default()
@@ -1284,9 +1451,15 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
 
         let mut module_lines: Vec<Line> = Vec::new();
         for (i, module) in repo.modules.iter().enumerate() {
-            let prefix = if i == selected_module && focus_area == FocusArea::ModuleList { ">> " } else { "   " };
+            let prefix = if i == selected_module && focus_area == FocusArea::ModuleList {
+                ">> "
+            } else {
+                "   "
+            };
             let style = if i == selected_module && focus_area == FocusArea::ModuleList {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
@@ -1297,7 +1470,12 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
         }
 
         let module_paragraph = Paragraph::new(module_lines)
-            .block(Block::default().borders(Borders::ALL).title("选择模块").border_style(module_border_style))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title("选择模块")
+                    .border_style(module_border_style),
+            )
             .wrap(Wrap { trim: true });
         f.render_widget(module_paragraph, chunks[0]);
 
@@ -1326,10 +1504,16 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
                 } else {
                     false
                 };
-                let prefix = if i == selected_task && focus_area == FocusArea::TaskList { ">> " } else { "   " };
+                let prefix = if i == selected_task && focus_area == FocusArea::TaskList {
+                    ">> "
+                } else {
+                    "   "
+                };
                 let content = format!("[{}] {}", if is_done { 'x' } else { ' ' }, task_name);
                 let style = if i == selected_task && focus_area == FocusArea::TaskList {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::White)
                 };
@@ -1340,7 +1524,12 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
             }
 
             let task_paragraph = Paragraph::new(task_lines)
-                .block(Block::default().borders(Borders::ALL).title(format!("任务列表 - {}", module.name)).border_style(border_style))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(format!("任务列表 - {}", module.name))
+                        .border_style(border_style),
+                )
                 .wrap(Wrap { trim: true });
             f.render_widget(task_paragraph, chunks[1]);
         }
@@ -1348,7 +1537,14 @@ fn draw_update_progress(f: &mut Frame, area: Rect, app: &App, selected_module: u
 }
 
 /// 绘制练习界面
-fn draw_practice(f: &mut Frame, area: Rect, app: &App, selected_module: usize, question_count: usize, focus_field: PracticeField) {
+fn draw_practice(
+    f: &mut Frame,
+    area: Rect,
+    app: &App,
+    selected_module: usize,
+    question_count: usize,
+    focus_field: PracticeField,
+) {
     if let Some(repo) = &app.repo {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -1412,10 +1608,7 @@ fn draw_achievements(f: &mut Frame, area: Rect, _app: &App) {
     // 获取成就数据
     let achievements = crate::db::get_all_achievements().unwrap_or_default();
 
-    let mut text = vec![
-        Line::from("🏆 成就系统"),
-        Line::from(""),
-    ];
+    let mut text = vec![Line::from("🏆 成就系统"), Line::from("")];
 
     if achievements.is_empty() {
         text.push(Line::from("还没有解锁任何成就"));
@@ -1423,7 +1616,11 @@ fn draw_achievements(f: &mut Frame, area: Rect, _app: &App) {
         text.push(Line::from("继续学习，解锁更多成就！"));
     } else {
         let unlocked_count = achievements.iter().filter(|a| a.unlocked).count();
-        text.push(Line::from(format!("已解锁: {}/{}", unlocked_count, achievements.len())));
+        text.push(Line::from(format!(
+            "已解锁: {}/{}",
+            unlocked_count,
+            achievements.len()
+        )));
         text.push(Line::from(""));
         text.push(Line::from(""));
 
@@ -1443,7 +1640,10 @@ fn draw_achievements(f: &mut Frame, area: Rect, _app: &App) {
             if achievement.unlocked {
                 text.push(Line::from(vec![
                     Span::raw("   "),
-                    Span::styled(achievement.description.clone(), Style::default().fg(Color::Gray)),
+                    Span::styled(
+                        achievement.description.clone(),
+                        Style::default().fg(Color::Gray),
+                    ),
                 ]));
             }
             text.push(Line::from(""));
@@ -1460,13 +1660,17 @@ fn draw_achievements(f: &mut Frame, area: Rect, _app: &App) {
 /// 绘制提醒设置界面
 fn draw_remind_setup(f: &mut Frame, area: Rect, hour: u8, minute: u8, focus_field: TimeField) {
     let hour_style = if focus_field == TimeField::Hour {
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
 
     let minute_style = if focus_field == TimeField::Minute {
-        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default()
     };
@@ -1520,15 +1724,19 @@ fn draw_export(f: &mut Frame, area: Rect) {
 fn draw_practice_session(f: &mut Frame, area: Rect, session: &PracticeSession) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),  // 标题和进度
-            Constraint::Min(0),     // 题目内容
-            Constraint::Length(3),  // 操作提示
-        ].as_ref())
+        .constraints(
+            [
+                Constraint::Length(3), // 标题和进度
+                Constraint::Min(0),    // 题目内容
+                Constraint::Length(3), // 操作提示
+            ]
+            .as_ref(),
+        )
         .split(area);
 
     // 标题和进度
-    let progress = format!("题目 {}/{} - [{}]",
+    let progress = format!(
+        "题目 {}/{} - [{}]",
         session.current_index + 1,
         session.questions.len(),
         session.questions[session.current_index].topic
@@ -1558,11 +1766,17 @@ fn draw_practice_session(f: &mut Frame, area: Rect, session: &PracticeSession) {
     // 显示选项
     if let Some(options) = &question.options {
         for (i, opt) in options.iter().enumerate() {
-            let prefix = if current_answer == Some(i) { ">> " } else { "   " };
+            let prefix = if current_answer == Some(i) {
+                ">> "
+            } else {
+                "   "
+            };
             let number = format!("{}. ", i + 1);
 
             let style = if current_answer == Some(i) {
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
@@ -1601,14 +1815,23 @@ fn draw_practice_session(f: &mut Frame, area: Rect, session: &PracticeSession) {
 }
 
 /// 绘制文件查看器界面
-fn draw_file_viewer(f: &mut Frame, area: Rect, file_path: &str, content: &str, scroll_offset: usize) {
+fn draw_file_viewer(
+    f: &mut Frame,
+    area: Rect,
+    file_path: &str,
+    content: &str,
+    scroll_offset: usize,
+) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3),  // 文件信息
-            Constraint::Min(0),     // 文件内容
-            Constraint::Length(3),  // 操作提示
-        ].as_ref())
+        .constraints(
+            [
+                Constraint::Length(3), // 文件信息
+                Constraint::Min(0),    // 文件内容
+                Constraint::Length(3), // 操作提示
+            ]
+            .as_ref(),
+        )
         .split(area);
 
     // 文件信息
@@ -1651,14 +1874,23 @@ fn draw_file_viewer(f: &mut Frame, area: Rect, file_path: &str, content: &str, s
 }
 
 /// 绘制更新进度确认界面
-fn draw_update_progress_confirm(f: &mut Frame, area: Rect, app: &App, selected_module: usize, selected_task: usize, confirmed: bool) {
+fn draw_update_progress_confirm(
+    f: &mut Frame,
+    area: Rect,
+    app: &App,
+    selected_module: usize,
+    selected_task: usize,
+    confirmed: bool,
+) {
     if let Some(repo) = &app.repo {
         if let Some(module) = repo.modules.get(selected_module) {
             let task_names = ["概念学习", "代码示例", "练习题", "综合练习", "自检通过"];
             let task_name = task_names.get(selected_task).unwrap_or(&"任务");
 
             let yes_style = if confirmed {
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };

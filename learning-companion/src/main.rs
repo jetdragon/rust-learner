@@ -4,15 +4,15 @@
 
 mod db;
 mod exercise;
+mod notify;
 mod progress;
 mod repo;
 mod storage;
-mod ui;
-mod notify;
 mod tui;
+mod ui;
 
-use clap::{Parser, Subcommand};
 use anyhow::Result;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "learning-companion")]
@@ -97,9 +97,10 @@ fn main() -> Result<()> {
                 }
                 Commands::Update { module, task } => {
                     let repo = repo::LearningRepo::new(&cli.path)?;
-                    progress::update_task_status(&repo, &module, &task)?;
-                    println!("✅ 已更新 {} 的 {} 任务状态", module, task);
-                    ui::show_encouragement();
+                    match progress::update_task_status(&repo, &module, &task) {
+                        Ok(msg) => println!("{}", msg),
+                        Err(e) => println!("❌ 更新失败: {}", e),
+                    }
                 }
                 Commands::Practice { module, count } => {
                     let repo = repo::LearningRepo::new(&cli.path)?;

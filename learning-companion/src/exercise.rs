@@ -45,7 +45,9 @@ impl PracticeSession {
             return 0.0;
         }
 
-        let correct = self.answers.iter()
+        let correct = self
+            .answers
+            .iter()
             .zip(self.questions.iter())
             .filter(|(answer, q)| {
                 // 简化处理：假设答案索引对应正确选项
@@ -194,7 +196,8 @@ pub fn generate_basics_questions(count: usize) -> Vec<Question> {
     let mut indices: Vec<usize> = (0..all_questions.len()).collect();
     indices.shuffle(&mut rng);
 
-    indices.iter()
+    indices
+        .iter()
         .take(count.min(all_questions.len()))
         .map(|&i| all_questions[i].clone())
         .collect()
@@ -224,7 +227,12 @@ pub fn run_practice(_repo: &LearningRepo, module_id: &str, count: usize) -> Resu
     let mut correct_count = 0;
 
     for (i, q) in session.questions.iter().enumerate() {
-        println!("📚 题目 {}/{} - [{}]", i + 1, session.questions.len(), q.topic);
+        println!(
+            "📚 题目 {}/{} - [{}]",
+            i + 1,
+            session.questions.len(),
+            q.topic
+        );
         println!("{}\n", q.prompt);
 
         if let Some(options) = &q.options {
@@ -264,8 +272,12 @@ pub fn run_practice(_repo: &LearningRepo, module_id: &str, count: usize) -> Resu
     println!("\n╔════════════════════════════════════════╗");
     println!("║            📊 测试结果                ║");
     println!("╚════════════════════════════════════════╝");
-    println!("\n正确率：{:.1}% ({}/{})",
-        score, correct_count, session.questions.len());
+    println!(
+        "\n正确率：{:.1}% ({}/{})",
+        score,
+        correct_count,
+        session.questions.len()
+    );
 
     if score >= 95.0 {
         println!("🎉 太棒了！掌握程度：优秀");

@@ -39,12 +39,11 @@ impl TaskType {
 }
 
 /// 更新任务状态
-pub fn update_task_status(repo: &LearningRepo, module_id: &str, task_str: &str) -> Result<()> {
+/// 返回成功消息字符串，供 TUI 或 CLI 显示
+pub fn update_task_status(repo: &LearningRepo, module_id: &str, task_str: &str) -> Result<String> {
     let task = TaskType::from_str(task_str);
 
     if let Some(task_type) = task {
-        println!("✓ 标记 {} 的 {} 为已完成", module_id, task_type.as_str());
-
         // 更新数据库中的模块进度
         // 简化实现：每次更新增加掌握分数
         let increase = match task_type {
@@ -61,17 +60,29 @@ pub fn update_task_status(repo: &LearningRepo, module_id: &str, task_str: &str) 
 
         crate::db::update_module_progress(module_id, new_score)?;
 
-        println!("📊 当前掌握程度：{:.1}%", new_score);
-
+        // 根据得分返回不同的消息
         if new_score >= 95.0 {
-            println!("🎉 恭喜！你已掌握该模块，可以进入下一阶段学习！");
+            return Ok(format!(
+                "🎉 恭喜！{} 已完成 {}，掌握程度：{:.1}%，可以进入下一阶段学习！",
+                module_id,
+                task_type.as_str(),
+                new_score
+            ));
         } else if new_score >= 80.0 {
-            println!("💪 做得不错！继续加油！");
+            return Ok(format!(
+                "💪 做得不错！{} 已完成 {}，掌握程度：{:.1}%，继续加油！",
+                module_id,
+                task_type.as_str(),
+                new_score
+            ));
         } else {
-            println!("📚 继续学习，你可以的！");
+            return Ok(format!(
+                "✓ {} 已完成 {}，掌握程度：{:.1}%，继续学习，你可以的！",
+                module_id,
+                task_type.as_str(),
+                new_score
+            ));
         }
-
-        return Ok(());
     }
 
     // 如果不是标准任务名，尝试匹配
@@ -88,8 +99,6 @@ pub fn update_task_status(repo: &LearningRepo, module_id: &str, task_str: &str) 
         return update_task_status(repo, module_id, "checklist");
     }
 
-    println!("❌ 未知的任务类型：{}", task_str);
-    println!("💡 支持的任务类型：概念(concept)、示例(examples)、练习(exercises)、综合(project)、自检(checklist)");
     Err(anyhow::anyhow!("未知任务类型"))
 }
 

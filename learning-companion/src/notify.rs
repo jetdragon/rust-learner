@@ -3,10 +3,10 @@
 //! 系统通知和定时提醒
 
 use anyhow::Result;
+use chrono::{Local, Timelike};
 use notify_rust::Notification;
 use std::thread;
 use std::time::Duration;
-use chrono::{Local, Timelike};
 
 /// 设置提醒
 pub fn set_reminder(hour: u8, minute: u8) -> Result<()> {
@@ -51,7 +51,8 @@ fn send_learning_reminder() -> Result<()> {
     let index = (std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
-        .as_secs() % messages.len() as u64) as usize;
+        .as_secs()
+        % messages.len() as u64) as usize;
 
     Notification::new()
         .summary("Rust 学习伴侣")

@@ -9,8 +9,10 @@ use chrono::Local;
 pub fn export_data() -> Result<()> {
     let data = crate::db::export_all_data()?;
 
-    let filename = format!("learning-companion-export-{}.json",
-        Local::now().format("%Y%m%d"));
+    let filename = format!(
+        "learning-companion-export-{}.json",
+        Local::now().format("%Y%m%d")
+    );
 
     std::fs::write(&filename, data)?;
 
@@ -24,7 +26,10 @@ pub fn export_report() -> Result<String> {
     let mut report = String::new();
 
     report.push_str("# Rust 学习报告\n\n");
-    report.push_str(&format!("生成时间：{}\n\n", Local::now().format("%Y-%m-%d %H:%M")));
+    report.push_str(&format!(
+        "生成时间：{}\n\n",
+        Local::now().format("%Y-%m-%d %H:%M")
+    ));
 
     // 从数据库获取数据并格式化
     let data = crate::db::export_all_data()?;

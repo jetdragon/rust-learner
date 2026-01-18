@@ -2,9 +2,9 @@
 //!
 //! 使用 SQLite 存储学习记录和统计数据
 
-use rusqlite::{Connection, OptionalExtension};
-use chrono::{Local, NaiveDate};
 use anyhow::Result;
+use chrono::{Local, NaiveDate};
+use rusqlite::{Connection, OptionalExtension};
 use std::path::PathBuf;
 
 /// 数据库文件路径
@@ -107,10 +107,7 @@ pub fn record_study_session(
 }
 
 /// 更新模块进度
-pub fn update_module_progress(
-    module_id: &str,
-    mastery_score: f32,
-) -> Result<()> {
+pub fn update_module_progress(module_id: &str, mastery_score: f32) -> Result<()> {
     let conn = Connection::open(db_path())?;
     let now = Local::now().to_rfc3339();
 
@@ -159,9 +156,7 @@ pub fn check_and_unlock_achievement(achievement_type: &str) -> Result<bool> {
     let conn = Connection::open(db_path())?;
 
     // 检查是否已解锁
-    let mut stmt = conn.prepare(
-        "SELECT COUNT(*) FROM achievements WHERE achievement_type = ?1"
-    )?;
+    let mut stmt = conn.prepare("SELECT COUNT(*) FROM achievements WHERE achievement_type = ?1")?;
 
     let count: i64 = stmt.query_row([achievement_type], |row| row.get(0))?;
 
@@ -183,14 +178,9 @@ pub fn check_and_unlock_achievement(achievement_type: &str) -> Result<bool> {
 pub fn get_streak_days() -> Result<u32> {
     let conn = Connection::open(db_path())?;
 
-    let mut stmt = conn.prepare(
-        "SELECT DISTINCT date FROM study_sessions ORDER BY date DESC"
-    )?;
+    let mut stmt = conn.prepare("SELECT DISTINCT date FROM study_sessions ORDER BY date DESC")?;
 
-    let dates: Result<Vec<String>, _> = stmt
-        .query_map([], |row| row.get(0))
-        .unwrap()
-        .collect();
+    let dates: Result<Vec<String>, _> = stmt.query_map([], |row| row.get(0)).unwrap().collect();
 
     let dates = dates?;
     if dates.is_empty() {
@@ -231,9 +221,7 @@ pub fn get_setting(key: &str) -> Result<Option<String>> {
     let conn = Connection::open(db_path())?;
     let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?1")?;
 
-    let result: Result<Option<String>, _> = stmt
-        .query_row([key], |row| row.get(0))
-        .optional();
+    let result: Result<Option<String>, _> = stmt.query_row([key], |row| row.get(0)).optional();
 
     result.map_err(Into::into)
 }
@@ -269,9 +257,9 @@ pub fn export_all_data() -> Result<String> {
 /// 获取模块掌握程度
 pub fn get_module_mastery(module_id: &str) -> Option<f32> {
     let conn = Connection::open(db_path()).ok()?;
-    let mut stmt = conn.prepare(
-        "SELECT mastery_score FROM module_progress WHERE module_id = ?1"
-    ).ok()?;
+    let mut stmt = conn
+        .prepare("SELECT mastery_score FROM module_progress WHERE module_id = ?1")
+        .ok()?;
 
     stmt.query_row([module_id], |row| row.get(0)).ok()
 }
@@ -300,11 +288,10 @@ pub fn get_all_achievements() -> Result<Vec<Achievement>> {
     let conn = Connection::open(db_path())?;
 
     // 获取已解锁的成就
-    let mut stmt = conn.prepare(
-        "SELECT achievement_type FROM achievements"
-    )?;
+    let mut stmt = conn.prepare("SELECT achievement_type FROM achievements")?;
 
-    let unlocked_types: Vec<String> = stmt.query_map([], |row| row.get(0))?
+    let unlocked_types: Vec<String> = stmt
+        .query_map([], |row| row.get(0))?
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut achievements = Vec::new();

@@ -2,9 +2,9 @@
 //!
 //! 提供命令行界面和可视化展示
 
+use crate::db;
 use crate::repo::LearningRepo;
 use anyhow::Result;
-use crate::db;
 use rand::Rng;
 
 /// 显示仪表板
@@ -20,7 +20,10 @@ pub fn show_dashboard(path: &str) -> Result<()> {
     let completed = repo.progress.iter().filter(|p| p.status == "[x]").count();
     let total = repo.modules.len();
 
-    println!("📊 总体进度：{:.1}% ({}/{})\n", completion, completed, total);
+    println!(
+        "📊 总体进度：{:.1}% ({}/{})\n",
+        completion, completed, total
+    );
 
     // 进度条
     let filled = (completion / 5.0) as usize;
@@ -146,11 +149,15 @@ pub fn show_achievements() -> Result<()> {
             _ => "🏅",
         };
 
-        let date_str = achievement.unlocked_at
+        let date_str = achievement
+            .unlocked_at
             .map(|d| d.format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| "未知".to_string());
 
-        println!("  {} {} - 解锁于 {}", icon, achievement.description, date_str);
+        println!(
+            "  {} {} - 解锁于 {}",
+            icon, achievement.description, date_str
+        );
     }
 
     println!();
