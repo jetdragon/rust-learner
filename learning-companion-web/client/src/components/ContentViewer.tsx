@@ -120,7 +120,16 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
   const handleBackToExamples = () => {
     setSelectedExample(null);
     setContent('');
+    setExamples([]); // Clear examples to force reload
     loadContent();
+  };
+
+  const handleClose = () => {
+    if (selectedExample) {
+      handleBackToExamples();
+    } else {
+      onClose();
+    }
   };
 
   return (
@@ -142,7 +151,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             <h2 className="text-2xl font-bold text-warm-800">{getContentTypeName(contentType)}</h2>
             {selectedExample && <p className="text-warm-600 text-sm">{selectedExample}</p>}
           </div>
-          <button onClick={onClose} className="text-warm-400 hover:text-warm-600 text-2xl">✕</button>
+          <button onClick={handleClose} className="text-warm-400 hover:text-warm-600 text-2xl transition-colors hover:scale-110">✕</button>
         </div>
 
         {content && selectedExample ? (
@@ -179,8 +188,31 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h1: ({node, ...props}) => <h1 className="border-b border-warm-200 pb-2 mb-4" {...props} />,
-                h2: ({node, ...props}) => <h2 className="border-b border-warm-100 pb-1 mb-3" {...props} />,
+                h1: ({node, ...props}) => <h1 className="text-4xl font-bold text-warm-800 mb-6 pb-3 border-b-2 border-warm-300" {...props} />,
+                h2: ({node, ...props}) => <h2 className="text-3xl font-semibold text-warm-700 mt-8 mb-4 pb-2 border-b border-warm-200" {...props} />,
+                h3: ({node, ...props}) => <h3 className="text-2xl font-semibold text-warm-600 mt-6 mb-3" {...props} />,
+                h4: ({node, ...props}) => <h4 className="text-xl font-semibold text-warm-600 mt-4 mb-2" {...props} />,
+                h5: ({node, ...props}) => <h5 className="text-lg font-semibold text-warm-600 mt-3 mb-1" {...props} />,
+                h6: ({node, ...props}) => <h6 className="text-base font-semibold text-warm-600 mt-2 mb-1" {...props} />,
+                p: ({node, ...props}) => <p className="text-warm-700 mb-4 leading-relaxed" {...props} />,
+                ul: ({node, ...props}) => <ul className="list-disc list-inside mb-4 ml-4 text-warm-700 space-y-1" {...props} />,
+                ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-4 ml-4 text-warm-700 space-y-1" {...props} />,
+                li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                a: ({node, ...props}) => <a className="text-warm-600 hover:text-warm-800 underline-offset-2 hover:underline" {...props} />,
+                blockquote: ({node, ...props}) => (
+                  <blockquote className="border-l-4 border-warm-300 pl-4 py-2 my-4 bg-warm-50 italic rounded-r-lg" {...props} />
+                ),
+                table: ({node, ...props}) => (
+                  <div className="overflow-x-auto my-6">
+                    <table className="w-full border-collapse border border-warm-200 rounded-lg overflow-hidden" {...props} />
+                  </div>
+                ),
+                thead: ({node, ...props}) => <thead className="bg-warm-100" {...props} />,
+                tbody: ({node, ...props}) => <tbody {...props} />,
+                tr: ({node, ...props}) => <tr className="border-b border-warm-100 hover:bg-warm-50" {...props} />,
+                th: ({node, ...props}) => <th className="border border-warm-200 px-4 py-3 text-left font-semibold text-warm-800" {...props} />,
+                td: ({node, ...props}) => <td className="border border-warm-200 px-4 py-3 text-warm-700" {...props} />,
+                hr: ({node, ...props}) => <hr className="border-t border-warm-200 my-8" {...props} />,
                 code(props) {
                   const { inline, className, children } = props as any;
                   const match = /language-(\w+)/.exec(className || '');
