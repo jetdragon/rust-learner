@@ -1,22 +1,24 @@
 [workspace]
+resolver = "2"
 members = [
-    "module-01-basics",
-    "module-02-ownership",
-    "module-03-structs-enums",
-    "module-04-lifetimes",
-    "module-05-patterns",
-    "module-06-error-handling",
-    "module-07-collections",
-    "module-08-traits-generics",
-    "module-09-concurrency",
-    "module-10-project",
-    "module-11-smart-pointers",
-    "module-12-iterators",
+    "rust/module-01-basics",
+    "rust/module-02-ownership",
+    "rust/module-03-structs-enums",
+    "rust/module-04-lifetimes",
+    "rust/module-05-patterns",
+    "rust/module-06-error-handling",
+    "rust/module-07-collections",
+    "rust/module-08-traits-generics",
+    "rust/module-09-concurrency",
+    "rust/module-10-project",
+    "rust/module-11-smart-pointers",
+    "rust/module-12-iterators",
+    "learning-companion-web/server",
 ]
 exclude = [
     "learning-companion",
+    "learning-companion-web/client",
 ]
-resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
