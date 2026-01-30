@@ -12,59 +12,85 @@ pub async fn get_modules(State(state): State<Arc<AppState>>) -> Json<serde_json:
 
     let mut modules = Vec::new();
 
-    if let Ok(entries) = std::fs::read_dir(project_path) {
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().to_string();
+    // 支持多语言目录结构：rust/, python/, go/
+    let language_dirs = ["rust", "python", "go"];
 
-            if name.starts_with("module-") && entry.path().is_dir() {
-                let module_path = entry.path();
-                let has_readme = module_path.join("README.md").exists();
-                let has_exercises = module_path.join("exercises.md").exists();
-                let has_tests = module_path.join("tests").is_dir();
-                let has_checklist = module_path.join("自检清单.md").exists();
+    for lang in &language_dirs {
+        let lang_path = project_path.join(lang);
 
-                let display_name = extract_module_name(&name);
+        // 如果语言目录不存在，跳过
+        if !lang_path.exists() || !lang_path.is_dir() {
+            continue;
+        }
 
-                // Get or create module state
-                let module_state = {
-                    let mut states = state.module_states.lock().await;
-                    states.get(&name).cloned().unwrap_or_else(|| {
-                        // Initialize with empty tasks
-                        let mut tasks_completed = std::collections::HashMap::new();
-                        tasks_completed.insert("concept".to_string(), false);
-                        tasks_completed.insert("examples".to_string(), false);
-                        tasks_completed.insert("exercises".to_string(), false);
-                        tasks_completed.insert("project".to_string(), false);
-                        tasks_completed.insert("checklist".to_string(), false);
+        // 扫描该语言目录下的所有 module-XX-* 子目录
+        if let Ok(entries) = std::fs::read_dir(&lang_path) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
 
-                        ModuleState {
-                            progress: 0.0,
-                            tasks_completed,
-                        }
-                    })
-                };
+                if name.starts_with("module-") && entry.path().is_dir() {
+                    let module_path = entry.path();
+                    let has_readme = module_path.join("README.md").exists();
+                    let has_exercises = module_path.join("exercises.md").exists();
+                    let has_tests = module_path.join("tests").is_dir();
+                    let has_checklist = module_path.join("自检清单.md").exists();
 
-                modules.push(serde_json::json!({
-                    "id": name.clone(),
-                    "name": display_name,
-                    "has_readme": has_readme,
-                    "has_exercises": has_exercises,
-                    "has_tests": has_tests,
-                    "has_checklist": has_checklist,
-                    "progress": module_state.progress,
-                    "tasks": {
-                        "concept": module_state.tasks_completed.get("concept").copied().unwrap_or(false),
-                        "examples": module_state.tasks_completed.get("examples").copied().unwrap_or(false),
-                        "exercises": module_state.tasks_completed.get("exercises").copied().unwrap_or(false),
-                        "project": module_state.tasks_completed.get("project").copied().unwrap_or(false),
-                        "checklist": module_state.tasks_completed.get("checklist").copied().unwrap_or(false),
-                    },
-                }));
+                    let display_name = extract_module_name(&name);
+
+                    // Get or create module state
+                    let module_state = {
+                        let mut states = state.module_states.lock().await;
+                        states.get(&name).cloned().unwrap_or_else(|| {
+                            // Initialize with empty tasks
+                            let mut tasks_completed = std::collections::HashMap::new();
+                            tasks_completed.insert("concept".to_string(), false);
+                            tasks_completed.insert("examples".to_string(), false);
+                            tasks_completed.insert("exercises".to_string(), false);
+                            tasks_completed.insert("project".to_string(), false);
+                            tasks_completed.insert("checklist".to_string(), false);
+
+                            ModuleState {
+                                progress: 0.0,
+                                tasks_completed,
+                            }
+                        })
+                    };
+
+                    modules.push(serde_json::json!({
+                        "id": name.clone(),
+                        "name": display_name,
+                        "language": lang,  // 添加语言标识
+                        "has_readme": has_readme,
+                        "has_exercises": has_exercises,
+                        "has_tests": has_tests,
+                        "has_checklist": has_checklist,
+                        "progress": module_state.progress,
+                        "tasks": {
+                            "concept": module_state.tasks_completed.get("concept").copied().unwrap_or(false),
+                            "examples": module_state.tasks_completed.get("examples").copied().unwrap_or(false),
+                            "exercises": module_state.tasks_completed.get("exercises").copied().unwrap_or(false),
+                            "project": module_state.tasks_completed.get("project").copied().unwrap_or(false),
+                            "checklist": module_state.tasks_completed.get("checklist").copied().unwrap_or(false),
+                        },
+                    }));
+                }
             }
         }
     }
 
-    modules.sort_by(|a, b| a["id"].as_str().unwrap().cmp(&b["id"].as_str().unwrap()));
+    // 按语言和模块编号排序
+    modules.sort_by(|a, b| {
+        let lang_a = a["language"].as_str().unwrap_or("");
+        let lang_b = b["language"].as_str().unwrap_or("");
+        match lang_a.cmp(&lang_b) {
+            std::cmp::Ordering::Equal => a["id"]
+                .as_str()
+                .unwrap_or("")
+                .cmp(&b["id"].as_str().unwrap_or("")),
+            other => other,
+        }
+    });
+
     Json(serde_json::Value::Array(modules))
 }
 

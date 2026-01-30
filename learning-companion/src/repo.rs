@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 pub struct LearningModule {
     pub id: String,
     pub name: String,
+    pub language: String, // 语言标识: "rust", "python", "go"
     pub directory: PathBuf,
     pub has_readme: bool,
     pub has_exercises: bool,
@@ -56,30 +57,47 @@ impl LearningRepo {
     fn scan_modules(base_path: &Path) -> Result<Vec<LearningModule>> {
         let mut modules = Vec::new();
 
-        for entry in fs::read_dir(base_path)? {
-            let entry = entry?;
-            let name = entry.file_name().to_string_lossy().to_string();
+        // 支持多语言目录结构：rust/, python/, go/
+        let language_dirs = ["rust", "python", "go"];
 
-            // 识别模块目录 (module-XX-*)
-            if name.starts_with("module-") && entry.path().is_dir() {
-                let module_path = entry.path();
+        for lang in &language_dirs {
+            let lang_path = base_path.join(lang);
 
-                let module = LearningModule {
-                    id: name.clone(),
-                    name: Self::extract_module_name(&name),
-                    directory: module_path.clone(),
-                    has_readme: module_path.join("README.md").exists(),
-                    has_exercises: module_path.join("exercises.md").exists(),
-                    has_tests: module_path.join("tests").exists(),
-                    has_checklist: module_path.join("自检清单.md").exists(),
-                };
+            // 如果语言目录不存在，跳过
+            if !lang_path.exists() || !lang_path.is_dir() {
+                continue;
+            }
 
-                modules.push(module);
+            // 扫描该语言目录下的所有 module-XX-* 子目录
+            for entry in fs::read_dir(&lang_path)? {
+                let entry = entry?;
+                let name = entry.file_name().to_string_lossy().to_string();
+
+                // 识别模块目录 (module-XX-*)
+                if name.starts_with("module-") && entry.path().is_dir() {
+                    let module_path = entry.path();
+
+                    let module = LearningModule {
+                        id: name.clone(),
+                        name: Self::extract_module_name(&name),
+                        language: lang.to_string(), // 添加语言标识
+                        directory: module_path.clone(),
+                        has_readme: module_path.join("README.md").exists(),
+                        has_exercises: module_path.join("exercises.md").exists(),
+                        has_tests: module_path.join("tests").exists(),
+                        has_checklist: module_path.join("自检清单.md").exists(),
+                    };
+
+                    modules.push(module);
+                }
             }
         }
 
-        // 按模块编号排序
-        modules.sort_by(|a, b| a.id.cmp(&b.id));
+        // 按语言和模块编号排序
+        modules.sort_by(|a, b| match a.language.cmp(&b.language) {
+            std::cmp::Ordering::Equal => a.id.cmp(&b.id),
+            other => other,
+        });
 
         Ok(modules)
     }
