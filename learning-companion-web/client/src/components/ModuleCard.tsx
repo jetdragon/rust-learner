@@ -1,14 +1,25 @@
 import React from 'react';
 import type { LearningModule, ModuleTasks } from '../types';
+import { getLanguageTheme, type LanguageTheme } from '../themes';
 
 interface ModuleCardProps {
   module: LearningModule;
+  theme?: LanguageTheme;
   onUpdateProgress: (moduleId: string, taskType: string) => void;
   onStartPractice: (moduleId: string) => void;
   onViewContent: (moduleId: string, contentType: string) => void;
 }
 
-export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress, onStartPractice, onViewContent }) => {
+export const ModuleCard: React.FC<ModuleCardProps> = ({
+  module,
+  theme,
+  onUpdateProgress,
+  onStartPractice,
+  onViewContent
+}) => {
+  // Get theme, fallback to module language
+  const cardTheme = theme || getLanguageTheme(module.language || 'rust');
+
   const taskLabels: (keyof ModuleTasks)[] = ['concept', 'examples', 'exercises', 'project', 'checklist'];
   const taskNames = {
     concept: '📖 概念学习',
@@ -34,28 +45,42 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress
   };
 
   const handleTaskClick = (task: keyof ModuleTasks) => {
-    // View content first
     const contentType = getContentType(task);
     if (contentType === 'examples') {
-      onViewContent(module.id, 'examples'); // List examples
+      onViewContent(module.id, 'examples');
     } else {
       onViewContent(module.id, contentType);
     }
-    
-    // Then update progress (only if not already completed)
+
     if (!module.tasks[task]) {
       onUpdateProgress(module.id, task);
     }
   };
 
   return (
-    <div className="card-warm mb-6 hover:shadow-xl transition-shadow duration-300">
+    <div
+      className="mb-6 hover:shadow-xl transition-shadow duration-300 rounded-lg p-6"
+      style={{
+        borderLeft: `4px solid ${cardTheme.primary}`,
+        backgroundColor: cardTheme.bg,
+        borderTop: `1px solid ${cardTheme.primary}33`,
+        borderRight: `1px solid ${cardTheme.primary}33`,
+        borderBottom: `1px solid ${cardTheme.primary}33`
+      }}
+    >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="text-2xl font-bold text-warm-800 mb-1">{module.name}</h3>
-          <p className="text-sm text-warm-600">进度: {module.progress.toFixed(1)}%</p>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-2xl">{cardTheme.emoji}</span>
+            <h3 className="text-2xl font-bold" style={{ color: cardTheme.primary }}>
+              {module.name}
+            </h3>
+          </div>
+          <p className="text-sm" style={{ color: cardTheme.text, opacity: 0.7 }}>
+            进度: {module.progress.toFixed(1)}%
+          </p>
         </div>
-        <div className="text-warm-500">
+        <div style={{ color: cardTheme.primary }}>
           <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2L2 7l10 5 10-5-10 5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
@@ -63,35 +88,46 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress
       </div>
 
       <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
+        <div className="flex justify-between text-sm mb-2" style={{ color: cardTheme.text }}>
           <span>掌握程度</span>
           <span className="font-semibold">{module.progress.toFixed(0)}%</span>
         </div>
-        <div className="w-full bg-warm-200 rounded-full h-3">
+        <div className="w-full rounded-full h-3" style={{ backgroundColor: `${cardTheme.primary}33` }}>
           <div
-            className="progress-bar-warm h-3 rounded-full transition-all duration-500"
-            style={{ width: `${module.progress}%` }}
+            className="h-3 rounded-full transition-all duration-500"
+            style={{
+              width: `${module.progress}%`,
+              backgroundColor: cardTheme.primary
+            }}
           />
         </div>
       </div>
 
       <div className="space-y-3">
-        <h4 className="font-semibold text-warm-700 mb-3">学习任务</h4>
+        <h4 className="font-semibold mb-3" style={{ color: cardTheme.text }}>学习任务</h4>
         {taskLabels.map((task) => (
           <button
             key={task}
             onClick={() => handleTaskClick(task)}
-            className="w-full flex items-center justify-between p-3 bg-warm-50 rounded-lg hover:bg-warm-100 transition-colors text-left"
+            className="w-full flex items-center justify-between p-3 rounded-lg hover:opacity-80 transition-opacity text-left"
+            style={{
+              backgroundColor: `${cardTheme.primary}15`
+            }}
           >
             <div className="flex items-center gap-3">
-              <span className={module.tasks[task] ? 'text-green-600 text-xl' : 'text-warm-400 text-xl'}>
+              <span className={module.tasks[task] ? 'text-green-600 text-xl' : 'text-gray-400 text-xl'}>
                 {module.tasks[task] ? '✅' : '⭕'}
               </span>
-              <span className={module.tasks[task] ? 'line-through text-warm-400' : 'text-warm-800'}>
+              <span
+                className={module.tasks[task] ? 'line-through' : ''}
+                style={module.tasks[task] ? { color: cardTheme.text, opacity: 0.5 } : { color: cardTheme.text }}
+              >
                 {taskNames[task]}
               </span>
             </div>
-            {module.tasks[task] && <span className="text-green-600 text-sm">已完成</span>}
+            {module.tasks[task] && (
+              <span className="text-green-600 text-sm font-medium">已完成</span>
+            )}
           </button>
         ))}
       </div>
@@ -99,7 +135,8 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({ module, onUpdateProgress
       <div className="flex gap-3 mt-6">
         <button
           onClick={() => onStartPractice(module.id)}
-          className="btn-warm flex-1"
+          className="flex-1 py-2 px-4 rounded-lg font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ backgroundColor: cardTheme.primary }}
         >
           📝 开始练习
         </button>
