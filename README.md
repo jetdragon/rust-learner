@@ -243,9 +243,19 @@ cargo run --release -- achievements
 
 ```
 learn_rust/
-├── module-01-basics/       # Rust 模块 01
-├── module-02-ownership/    # Rust 模块 02
-├── ...                     # Rust 模块 03-12
+├── rust/                   # Rust 模块目录
+│   ├── module-01-basics/
+│   ├── module-02-ownership/
+│   ├── module-03-structs-enums/
+│   ├── module-04-lifetimes/
+│   ├── module-05-patterns/
+│   ├── module-06-error-handling/
+│   ├── module-07-collections/
+│   ├── module-08-traits-generics/
+│   ├── module-09-concurrency/
+│   ├── module-10-project/
+│   ├── module-11-smart-pointers/
+│   └── module-12-iterators/
 ├── python/                 # Python 模块目录
 │   ├── python-01-basics/
 │   ├── python-02-control-flow/
@@ -258,6 +268,7 @@ learn_rust/
 ├── cpp/                    # C++ 模块目录（待完成）
 ├── java/                   # Java 模块目录（待完成）
 ├── learning-companion/     # 学习伴侣 CLI 工具
+├── learning-companion-web/ # 学习伴侣 Web 版
 └── README.md              # 本文件
 ```
 
