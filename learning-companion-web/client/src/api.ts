@@ -21,18 +21,18 @@ export const modulesApi = {
     return response.data;
   },
 
-  getContent: async (moduleId: string, contentType: string): Promise<{ content: string }> => {
-    const response = await api.get<{ content: string }>(`/modules/${moduleId}/content/${contentType}`);
+  getContent: async (module: LearningModule, contentType: string): Promise<{ content: string }> => {
+    const response = await api.get<{ content: string }>(`/modules/${module.language}/${module.id}/content/${contentType}`);
     return response.data;
   },
 
-  listExamples: async (moduleId: string): Promise<{ examples: string[] }> => {
-    const response = await api.get<{ examples: string[] }>(`/modules/${moduleId}/examples`);
+  listExamples: async (module: LearningModule): Promise<{ examples: string[] }> => {
+    const response = await api.get<{ examples: string[] }>(`/modules/${module.language}/${module.id}/examples`);
     return response.data;
   },
 
-  getExampleContent: async (moduleId: string, filename: string): Promise<{ content: string }> => {
-    const response = await api.get<{ content: string }>(`/modules/${moduleId}/examples/${filename}`);
+  getExampleContent: async (module: LearningModule, filename: string): Promise<{ content: string }> => {
+    const response = await api.get<{ content: string }>(`/modules/${module.language}/${module.id}/examples/${filename}`);
     return response.data;
   },
 };

@@ -41,12 +41,12 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
 
       if (contentType === 'examples') {
         // For examples, list all example files
-        const data = await modulesApi.listExamples(module.id);
+        const data = await modulesApi.listExamples(module);
         setExamples(data.examples);
         setContent('');
       } else {
         // For other content types, fetch the content
-        const data = await modulesApi.getContent(module.id, contentType);
+        const data = await modulesApi.getContent(module, contentType);
         setContent(data.content);
         setExamples([]);
       }
@@ -64,7 +64,7 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
 
     try {
       const { modulesApi } = await import('../api');
-      const data = await modulesApi.getExampleContent(module.id, filename);
+      const data = await modulesApi.getExampleContent(module, filename);
       setContent(data.content);
       setSelectedExample(filename);
       setExamples([]);

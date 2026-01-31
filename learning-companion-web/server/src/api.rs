@@ -244,16 +244,20 @@ pub async fn export_data() -> Json<serde_json::Value> {
 }
 
 pub async fn get_module_content(
-    Path((module_id, content_type)): Path<(String, String)>,
+    Path((language, module_id, content_type)): Path<(String, String, String)>,
     State(state): State<Arc<AppState>>,
 ) -> Json<serde_json::Value> {
     let project_path = std::path::Path::new(&state.project_path);
-    let module_path = project_path.join(&module_id);
+
+    // Use the language parameter directly to construct the module path
+    let module_path = project_path.join(&language).join(&module_id);
 
     if !module_path.exists() || !module_path.is_dir() {
         return Json(serde_json::json!({
             "error": "Module not found",
-            "module_id": module_id
+            "module_id": module_id,
+            "language": language,
+            "searched_path": module_path.to_string_lossy().to_string()
         }));
     }
 
@@ -299,16 +303,28 @@ pub async fn get_module_content(
 }
 
 pub async fn list_examples(
-    Path(module_id): Path<String>,
+    Path((language, module_id)): Path<(String, String)>,
     State(state): State<Arc<AppState>>,
 ) -> Json<serde_json::Value> {
     let project_path = std::path::Path::new(&state.project_path);
-    let module_path = project_path.join(&module_id);
+
+    // Use the language parameter directly to construct the module path
+    let module_path = project_path.join(&language).join(&module_id);
+
+    if !module_path.exists() || !module_path.is_dir() {
+        return Json(serde_json::json!({
+            "module_id": module_id,
+            "language": language,
+            "examples": Vec::<String>::new()
+        }));
+    }
+
     let examples_dir = module_path.join("examples");
 
     if !examples_dir.exists() || !examples_dir.is_dir() {
         return Json(serde_json::json!({
             "module_id": module_id,
+            "language": language,
             "examples": Vec::<String>::new()
         }));
     }
@@ -317,9 +333,14 @@ pub async fn list_examples(
     if let Ok(entries) = std::fs::read_dir(examples_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("rs") {
-                if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
-                    examples.push(filename.to_string());
+            // Accept .rs, .py, and .go files
+            if path.is_file() {
+                if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                    if ext == "rs" || ext == "py" || ext == "go" {
+                        if let Some(filename) = path.file_name().and_then(|s| s.to_str()) {
+                            examples.push(filename.to_string());
+                        }
+                    }
                 }
             }
         }
@@ -329,16 +350,29 @@ pub async fn list_examples(
 
     Json(serde_json::json!({
         "module_id": module_id,
+        "language": language,
         "examples": examples
     }))
 }
 
 pub async fn get_example_content(
-    Path((module_id, filename)): Path<(String, String)>,
+    Path((language, module_id, filename)): Path<(String, String, String)>,
     State(state): State<Arc<AppState>>,
 ) -> Json<serde_json::Value> {
     let project_path = std::path::Path::new(&state.project_path);
-    let module_path = project_path.join(&module_id);
+
+    // Use the language parameter directly to construct the module path
+    let module_path = project_path.join(&language).join(&module_id);
+
+    if !module_path.exists() || !module_path.is_dir() {
+        return Json(serde_json::json!({
+            "error": "Module not found",
+            "module_id": module_id,
+            "language": language,
+            "filename": filename
+        }));
+    }
+
     let examples_dir = module_path.join("examples");
     let file_path = examples_dir.join(&filename);
 
@@ -346,6 +380,7 @@ pub async fn get_example_content(
         return Json(serde_json::json!({
             "error": "Example file not found",
             "module_id": module_id,
+            "language": language,
             "filename": filename
         }));
     }
@@ -355,6 +390,7 @@ pub async fn get_example_content(
 
     Json(serde_json::json!({
         "module_id": module_id,
+        "language": language,
         "filename": filename,
         "content": content
     }))

@@ -41,12 +41,15 @@ async fn main() -> Result<()> {
         .route("/api/modules", get(api::get_modules))
         .route("/api/modules/:id/progress", post(api::update_progress))
         .route(
-            "/api/modules/:id/content/:type",
+            "/api/modules/:language/:id/content/:type",
             get(api::get_module_content),
         )
-        .route("/api/modules/:id/examples", get(api::list_examples))
         .route(
-            "/api/modules/:id/examples/:filename",
+            "/api/modules/:language/:id/examples",
+            get(api::list_examples),
+        )
+        .route(
+            "/api/modules/:language/:id/examples/:filename",
             get(api::get_example_content),
         )
         .route("/api/practice/:module", get(api::get_practice_questions))
