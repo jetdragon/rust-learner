@@ -52,8 +52,14 @@ async fn main() -> Result<()> {
             "/api/modules/:language/:id/examples/:filename",
             get(api::get_example_content),
         )
-        .route("/api/practice/:module", get(api::get_practice_questions))
-        .route("/api/practice/submit/:id", post(api::submit_practice))
+        .route(
+            "/api/practice/:language/:module",
+            get(api::get_practice_questions),
+        )
+        .route(
+            "/api/practice/submit/:language/:id",
+            post(api::submit_practice),
+        )
         .route("/api/achievements", get(api::get_achievements))
         .route("/api/export", get(api::export_data))
         .layer(

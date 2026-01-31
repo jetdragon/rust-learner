@@ -150,9 +150,16 @@ pub async fn update_progress(
     }))
 }
 
-pub async fn get_practice_questions(Path(_module_id): Path<String>) -> Json<serde_json::Value> {
+pub async fn get_practice_questions(
+    Path((language, _module_id)): Path<(String, String)>,
+) -> Json<serde_json::Value> {
     let questions = match _module_id.as_str() {
-        "module-01-basics" => generate_basics_questions(),
+        "module-01-basics" => match language.as_str() {
+            "python" => generate_python_basics_questions(),
+            "go" => generate_go_basics_questions(),
+            "rust" => generate_rust_basics_questions(),
+            _ => vec![],
+        },
         _ => vec![],
     };
 
@@ -160,7 +167,7 @@ pub async fn get_practice_questions(Path(_module_id): Path<String>) -> Json<serd
 }
 
 pub async fn submit_practice(
-    Path(_module_id): Path<String>,
+    Path((language, _module_id)): Path<(String, String)>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
     let answers: Vec<usize> = body["answers"]
@@ -173,7 +180,15 @@ pub async fn submit_practice(
         })
         .unwrap_or_default();
 
-    let questions = generate_basics_questions();
+    let questions = match _module_id.as_str() {
+        "module-01-basics" => match language.as_str() {
+            "python" => generate_python_basics_questions(),
+            "go" => generate_go_basics_questions(),
+            "rust" => generate_rust_basics_questions(),
+            _ => vec![],
+        },
+        _ => vec![],
+    };
     let correct_count = answers
         .iter()
         .zip(questions.iter())
@@ -420,7 +435,7 @@ fn extract_module_name(id: &str) -> String {
     id.to_string()
 }
 
-fn generate_basics_questions() -> Vec<serde_json::Value> {
+fn generate_rust_basics_questions() -> Vec<serde_json::Value> {
     vec![
         serde_json::json!({
             "id": 1,
@@ -451,6 +466,76 @@ fn generate_basics_questions() -> Vec<serde_json::Value> {
             "question": "Rust 中字符串类型 String 和 &str 的主要区别是什么？",
             "options": ["没有区别", "String 是拥有的，&str 是借用的", "&str 是拥有的，String 是借用的", "String 只能读，&str 只能写"],
             "correct_answer": "1",
+        }),
+    ]
+}
+
+fn generate_python_basics_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Python 中，如何声明一个变量？",
+            "options": ["使用 var 关键字", "直接赋值即可", "使用 let 关键字", "使用 const 关键字"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Python 中用于表示代码块的符号是什么？",
+            "options": ["花括号 {}", "方括号 []", "缩进（空格或制表符）", "圆括号 ()"],
+            "correct_answer": "2",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Python 中创建列表的正确语法是？",
+            "options": ["list = ()", "list = []", "list = {}", "list = <>"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Python 中定义函数的关键字是什么？",
+            "options": ["function", "def", "func", "define"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Python 中字典（Dictionary）使用什么符号定义？",
+            "options": ["圆括号 ()", "方括号 []", "花括号 {}", "尖括号 <>"],
+            "correct_answer": "2",
+        }),
+    ]
+}
+
+fn generate_go_basics_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Go 中声明变量的正确方式是？",
+            "options": ["var name = value", "let name = value", "name := value", "以上都可以"],
+            "correct_answer": "3",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Go 中函数可以返回多个值吗？",
+            "options": ["不可以", "可以", "只能返回两个值", "只能返回三个值"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Go 中用于并发执行的关键字是什么？",
+            "options": ["async", "go", "concurrent", "thread"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Go 中用于在 goroutine 之间传递数据的是什么？",
+            "options": ["Mutex", "Channel", "Queue", "Pipe"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Go 中包（package）的声明应该放在文件的什么位置？",
+            "options": ["文件末尾", "文件中间", "文件开头", "任意位置"],
+            "correct_answer": "2",
         }),
     ]
 }
