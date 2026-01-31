@@ -1,0 +1,23 @@
+[project]
+name = "module-02-control-flow"
+version = "0.1.0"
+description = "Python控制流模块"
+requires-python = ">=3.8"
+authors = [
+    {name = "Learn Rust Team", email = "noreply@example.com"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"

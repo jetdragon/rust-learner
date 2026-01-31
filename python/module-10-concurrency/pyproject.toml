@@ -1,7 +1,7 @@
 [project]
-name = "module-01-basics"
+name = "module-10-concurrency"
 version = "0.1.0"
-description = "Python基础入门模块"
+description = "Python并发编程模块"
 requires-python = ">=3.8"
 authors = [
     {name = "Learn Rust Team", email = "noreply@example.com"}
