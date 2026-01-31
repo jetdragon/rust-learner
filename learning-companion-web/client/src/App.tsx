@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { ModuleCard } from './components/ModuleCard';
+import { LanguageSelector } from './components/LanguageSelector';
 import { AchievementsPanel } from './components/AchievementsPanel';
 import { PracticeSession } from './components/PracticeSession';
 import { ContentViewer } from './components/ContentViewer';
@@ -18,39 +19,32 @@ function App() {
   const [showContentViewer, setShowContentViewer] = useState(false);
   const [currentModule, setCurrentModule] = useState<LearningModule | null>(null);
   const [currentContentType, setCurrentContentType] = useState<string>('');
+  
+  // Language selection state
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    // Don't load modules initially, wait for language selection
+    if (selectedLanguage) {
+      loadData(selectedLanguage);
+    } else {
+      setLoading(false);
+    }
+  }, [selectedLanguage]);
 
-  // Group modules by language
-  const modulesByLanguage = useMemo(() => {
-    const grouped: Record<string, LearningModule[]> = {};
-    
-    modules.forEach(module => {
-      const lang = module.language || 'unknown';
-      if (!grouped[lang]) {
-        grouped[lang] = [];
-      }
-      grouped[lang].push(module);
-    });
-    
-    // Sort by language name and module ID
-    const sortedGroups: Record<string, LearningModule[]> = {};
-    Object.keys(grouped).sort().forEach(lang => {
-      sortedGroups[lang] = grouped[lang].sort((a, b) => a.id.localeCompare(b.id));
-    });
-    
-    return sortedGroups;
-  }, [modules]);
-
-  const loadData = async () => {
+  const loadData = async (language?: string) => {
     try {
       const [modulesData, achievementsData] = await Promise.all([
         modulesApi.getAll(),
         achievementsApi.getAll(),
       ]);
-      setModules(modulesData);
+      
+      // Filter modules by language if specified
+      const filteredModules = language 
+        ? modulesData.filter(m => m.language === language)
+        : modulesData;
+      
+      setModules(filteredModules);
       setAchievements(achievementsData);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -59,10 +53,24 @@ function App() {
     }
   };
 
+  const handleSelectLanguage = (language: string) => {
+    setSelectedLanguage(language);
+    setLoading(true);
+    loadData(language);
+  };
+
+  const handleBackToLanguages = () => {
+    setSelectedLanguage(null);
+    setModules([]);
+    setLoading(false);
+  };
+
   const handleUpdateProgress = async (moduleId: string, taskType: string) => {
     try {
       await modulesApi.updateProgress(moduleId, taskType);
-      await loadData(); // Refresh data
+      if (selectedLanguage) {
+        await loadData(selectedLanguage);
+      }
     } catch (error) {
       console.error('Failed to update progress:', error);
       alert('更新失败，请重试');
@@ -129,7 +137,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-blue-50">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">🦀</div>
           <p className="text-warm-600 text-xl">加载中...</p>
@@ -138,17 +146,39 @@ function App() {
     );
   }
 
+  // Show language selector if no language is selected
+  if (!selectedLanguage) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50">
+        <LanguageSelector onSelectLanguage={handleSelectLanguage} />
+      </div>
+    );
+  }
+
+  // Show modules for selected language
+  const theme = LANGUAGE_THEMES[selectedLanguage] || getLanguageTheme(selectedLanguage);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-blue-50">
       {/* Header */}
       <header className="bg-warm-600 text-white shadow-lg">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                🦀🐍🐹 多语言学习伴侣
-              </h1>
-              <p className="text-warm-100 mt-1">追踪你的多语言学习进度</p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleBackToLanguages}
+                className="px-4 py-2 rounded-lg bg-warm-700 hover:bg-warm-800 transition-colors flex items-center gap-2"
+              >
+                ← 返回
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold flex items-center gap-2">
+                  {theme.emoji} {theme.name} 学习伴侣
+                </h1>
+                <p className="text-warm-100 mt-1">
+                  追踪你的 {theme.name} 学习进度
+                </p>
+              </div>
             </div>
             <div className="flex gap-4">
               <button
@@ -201,60 +231,33 @@ function App() {
         </div>
       </div>
 
-      {/* Modules - Grouped by Language */}
+      {/* Modules */}
       <div className="container mx-auto px-4 py-8">
-        <h2 className="text-3xl font-bold text-warm-800 mb-8">学习模块</h2>
+        <h2 className="text-3xl font-bold text-warm-800 mb-8">
+          {theme.name} 学习模块
+        </h2>
         
-        {Object.entries(modulesByLanguage).map(([lang, langModules]) => {
-          const theme = LANGUAGE_THEMES[lang] || getLanguageTheme(lang);
-          
-          return (
-            <div key={lang} className="mb-12">
-              {/* Language Group Header */}
-              <div 
-                className="mb-6 px-6 py-4 rounded-lg shadow-sm flex items-center gap-3"
-                style={{
-                  borderLeft: `6px solid ${theme.primary}`,
-                  backgroundColor: theme.bg
-                }}
-              >
-                <span className="text-4xl">{theme.emoji}</span>
-                <div>
-                  <h3 
-                    className="text-2xl font-bold"
-                    style={{ color: theme.primary }}
-                  >
-                    {theme.name} 模块
-                  </h3>
-                  <p className="text-sm" style={{ color: theme.text, opacity: 0.7 }}>
-                    {langModules.length} 个模块
-                  </p>
-                </div>
-              </div>
-
-              {/* Module Cards Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {langModules.map((module) => (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    theme={theme}
-                    onUpdateProgress={handleUpdateProgress}
-                    onStartPractice={handleStartPractice}
-                    onViewContent={handleViewContent}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {modules.map((module) => (
+            <ModuleCard
+              key={module.id}
+              module={module}
+              theme={theme}
+              onUpdateProgress={handleUpdateProgress}
+              onStartPractice={handleStartPractice}
+              onViewContent={handleViewContent}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Footer */}
       <footer className="bg-warm-800 text-warm-200 py-8 mt-12">
         <div className="container mx-auto px-4 text-center">
-          <p className="mb-2">🦀🐍🐹 多语言学习伴侣 - Web 版</p>
-          <p className="text-sm">追踪进度，激励学习，掌握多种编程语言</p>
+          <p className="mb-2">
+            {theme.emoji} {theme.name} 学习伴侣
+          </p>
+          <p className="text-sm">追踪进度，激励学习，掌握编程</p>
         </div>
       </footer>
 
