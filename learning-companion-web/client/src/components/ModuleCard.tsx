@@ -6,7 +6,7 @@ interface ModuleCardProps {
   module: LearningModule;
   theme?: LanguageTheme;
   onUpdateProgress: (moduleId: string, taskType: string) => void;
-  onStartPractice: (moduleId: string) => void;
+  onStartPractice: (module: LearningModule) => void;
   onViewContent: (moduleId: string, contentType: string) => void;
 }
 
@@ -134,7 +134,7 @@ export const ModuleCard: React.FC<ModuleCardProps> = ({
 
       <div className="flex gap-3 mt-6">
         <button
-          onClick={() => onStartPractice(module.id)}
+          onClick={() => onStartPractice(module)}
           className="flex-1 py-2 px-4 rounded-lg font-semibold text-white transition-opacity hover:opacity-90"
           style={{ backgroundColor: cardTheme.primary }}
         >

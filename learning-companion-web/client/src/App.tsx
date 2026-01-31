@@ -12,7 +12,7 @@ function App() {
   const [modules, setModules] = useState<LearningModule[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [showAchievements, setShowAchievements] = useState(false);
-  const [practiceModule, setPracticeModule] = useState<string | null>(null);
+  const [practiceModule, setPracticeModule] = useState<LearningModule | null>(null);
   const [practiceQuestions, setPracticeQuestions] = useState<PracticeQuestion[]>([]);
   const [practiceResult, setPracticeResult] = useState<PracticeResult | undefined>();
   const [loading, setLoading] = useState(true);
@@ -77,10 +77,10 @@ function App() {
     }
   };
 
-  const handleStartPractice = async (moduleId: string) => {
+  const handleStartPractice = async (module: LearningModule) => {
     try {
-      const data = await practiceApi.getQuestions(moduleId);
-      setPracticeModule(moduleId);
+      const data = await practiceApi.getQuestions(module);
+      setPracticeModule(module);
       setPracticeQuestions(data.questions);
       setPracticeResult(undefined);
     } catch (error) {
@@ -279,7 +279,7 @@ function App() {
 
       {practiceModule && practiceQuestions.length > 0 && (
         <PracticeSession
-          moduleId={practiceModule}
+          moduleId={practiceModule.id}
           questions={practiceQuestions}
           onClose={handleClosePractice}
           onSubmit={handleSubmitPractice}
