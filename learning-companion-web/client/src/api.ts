@@ -38,13 +38,13 @@ export const modulesApi = {
 };
 
 export const practiceApi = {
-  getQuestions: async (moduleId: string): Promise<{ questions: PracticeQuestion[] }> => {
-    const response = await api.get<{ questions: PracticeQuestion[] }>(`/practice/${moduleId}`);
+  getQuestions: async (module: LearningModule): Promise<{ questions: PracticeQuestion[] }> => {
+    const response = await api.get<{ questions: PracticeQuestion[] }>(`/practice/${module.language}/${module.id}`);
     return response.data;
   },
 
-  submit: async (moduleId: string, answers: number[]): Promise<PracticeResult> => {
-    const response = await api.post(`/practice/submit/${moduleId}`, { answers });
+  submit: async (module: LearningModule, answers: number[]): Promise<PracticeResult> => {
+    const response = await api.post(`/practice/submit/${module.language}/${module.id}`, { answers });
     return response.data;
   },
 };
