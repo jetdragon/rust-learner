@@ -160,7 +160,19 @@ pub async fn get_practice_questions(
             "rust" => generate_rust_basics_questions(),
             _ => vec![],
         },
-        _ => vec![],
+        "module-02-control-flow" => match language.as_str() {
+            "python" => generate_python_control_flow_questions(),
+            "go" => generate_go_control_flow_questions(),
+            "rust" => generate_rust_control_flow_questions(),
+            _ => vec![],
+        },
+        "module-03-data-structures" | "module-03-structs-enums" => match language.as_str() {
+            "python" => generate_python_data_structures_questions(),
+            "go" => generate_go_data_structures_questions(),
+            "rust" => generate_rust_structs_enums_questions(),
+            _ => vec![],
+        },
+        _ => generate_generic_questions(),
     };
 
     Json(serde_json::json!({ "questions": questions }))
@@ -187,7 +199,19 @@ pub async fn submit_practice(
             "rust" => generate_rust_basics_questions(),
             _ => vec![],
         },
-        _ => vec![],
+        "module-02-control-flow" => match language.as_str() {
+            "python" => generate_python_control_flow_questions(),
+            "go" => generate_go_control_flow_questions(),
+            "rust" => generate_rust_control_flow_questions(),
+            _ => vec![],
+        },
+        "module-03-data-structures" | "module-03-structs-enums" => match language.as_str() {
+            "python" => generate_python_data_structures_questions(),
+            "go" => generate_go_data_structures_questions(),
+            "rust" => generate_rust_structs_enums_questions(),
+            _ => vec![],
+        },
+        _ => generate_generic_questions(),
     };
     let correct_count = answers
         .iter()
@@ -536,6 +560,251 @@ fn generate_go_basics_questions() -> Vec<serde_json::Value> {
             "question": "Go 中包（package）的声明应该放在文件的什么位置？",
             "options": ["文件末尾", "文件中间", "文件开头", "任意位置"],
             "correct_answer": "2",
+        }),
+    ]
+}
+
+fn generate_python_control_flow_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Python 中 if 语句的正确语法是？",
+            "options": ["if (x > 0):", "if x > 0:", "if x > 0 then:", "if x > 0"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Python 中用于循环遍历列表的关键字是？",
+            "options": ["for", "while", "loop", "each"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Python 中跳出当前循环的关键字是？",
+            "options": ["exit", "break", "continue", "return"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Python 中用于捕获异常的关键字是？",
+            "options": ["catch", "except", "error", "handle"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Python 中 range(5) 生成的序列是？",
+            "options": ["[1, 2, 3, 4, 5]", "[0, 1, 2, 3, 4]", "[0, 1, 2, 3, 4, 5]", "[5]"],
+            "correct_answer": "1",
+        }),
+    ]
+}
+
+fn generate_go_control_flow_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Go 中 if 语句的条件需要括号吗？",
+            "options": ["必须加括号", "不需要括号", "可选", "只能用于复杂条件"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Go 中 for 循环的语法是？",
+            "options": ["for i := 0; i < 10; i++", "for (i = 0; i < 10; i++)", "for i in range(10)", "foreach i in 0..10"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Go 中 switch 语句默认会 fallthrough 吗？",
+            "options": ["会", "不会", "只有默认 case 会", "需要显式设置"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Go 中跳出循环的关键字是？",
+            "options": ["break", "exit", "return", "continue"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Go 中 defer 语句的作用是？",
+            "options": ["延迟执行函数", "定义延迟变量", "创建延迟队列", "暂停程序"],
+            "correct_answer": "0",
+        }),
+    ]
+}
+
+fn generate_rust_control_flow_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Rust 中 if 语句的条件需要括号吗？",
+            "options": ["必须加括号", "不需要括号", "可选", "编译器自动添加"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Rust 中 loop 表达式会？",
+            "options": ["执行一次", "永远循环", "条件为真时循环", "编译错误"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Rust 中 match 表达式必须？",
+            "options": ["穷尽所有可能", "有默认分支", "返回相同类型", "以上都是"],
+            "correct_answer": "3",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Rust 中 if let 的作用是？",
+            "options": ["简化模式匹配", "定义变量", "条件赋值", "类型转换"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Rust 中 while let 与 if let 的区别是？",
+            "options": ["没有区别", "while let 会循环", "if let 更快", "语法不同"],
+            "correct_answer": "1",
+        }),
+    ]
+}
+
+fn generate_python_data_structures_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Python 中列表和元组的主要区别是？",
+            "options": ["列表可以修改，元组不可修改", "元组可以修改，列表不可修改", "没有区别", "性能不同"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Python 中向列表添加元素的方法是？",
+            "options": ["add()", "append()", "push()", "insert()"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Python 中字典的键必须是？",
+            "options": ["字符串", "可哈希类型", "数字", "列表"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Python 中集合（set）的特点是？",
+            "options": ["有序且可重复", "无序且不重复", "有序且不重复", "无序且可重复"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Python 中列表切片的语法是？",
+            "options": ["list[start:end]", "list[start..end]", "list{start:end}", "list(start,end)"],
+            "correct_answer": "0",
+        }),
+    ]
+}
+
+fn generate_go_data_structures_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Go 中数组和切片的主要区别是？",
+            "options": ["数组长度固定，切片长度可变", "切片长度固定，数组长度可变", "没有区别", "性能不同"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Go 中创建切片的正确方式是？",
+            "options": ["slice := []int{}", "slice := [5]int{}", "slice := make([]int)", "以上都可以"],
+            "correct_answer": "3",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Go 中 map 的零值是？",
+            "options": ["空 map", "nil", "未定义", "空字符串"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Go 中向切片添加元素使用？",
+            "options": ["append()", "add()", "push()", "insert()"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Go 中结构体（struct）用于？",
+            "options": ["定义自定义数据类型", "创建函数", "定义接口", "管理内存"],
+            "correct_answer": "0",
+        }),
+    ]
+}
+
+fn generate_rust_structs_enums_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "Rust 中结构体（struct）的字段默认是？",
+            "options": ["公有的", "私有的", "受保护的", "需要显式声明"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "Rust 中枚举（enum）可以？",
+            "options": ["只有变体名称", "携带关联数据", "实现方法", "以上都可以"],
+            "correct_answer": "3",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "Rust 中 Option<T> 表示？",
+            "options": ["可选配置", "可能为空的值", "可选参数", "配置选项"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "Rust 中 Result<T, E> 用于？",
+            "options": ["表示可能失败的操作", "返回多个值", "类型转换", "错误处理"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "Rust 中 impl 块用于？",
+            "options": ["实现结构体或枚举的方法", "导入模块", "定义接口", "实现 trait"],
+            "correct_answer": "0",
+        }),
+    ]
+}
+
+fn generate_generic_questions() -> Vec<serde_json::Value> {
+    vec![
+        serde_json::json!({
+            "id": 1,
+            "question": "编程中，变量命名应该？",
+            "options": ["越短越好", "有意义且清晰", "使用下划线开头", "全部大写"],
+            "correct_answer": "1",
+        }),
+        serde_json::json!({
+            "id": 2,
+            "question": "良好的代码注释应该？",
+            "options": ["解释为什么，而不是做什么", "越多越好", "每行都注释", "不需要注释"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 3,
+            "question": "函数设计的最佳实践是？",
+            "options": ["一个函数只做一件事", "函数越长越好", "包含所有逻辑", "避免使用参数"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 4,
+            "question": "代码重构的目的是？",
+            "options": ["改进代码结构", "添加新功能", "修复 bug", "重写代码"],
+            "correct_answer": "0",
+        }),
+        serde_json::json!({
+            "id": 5,
+            "question": "版本控制（如 Git）的主要作用是？",
+            "options": ["跟踪代码变更", "编译代码", "运行测试", "部署应用"],
+            "correct_answer": "0",
         }),
     ]
 }
