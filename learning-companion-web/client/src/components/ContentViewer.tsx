@@ -4,11 +4,13 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import type { LearningModule } from '../types';
+import type { LanguageTheme } from '../themes';
 
 interface ContentViewerProps {
   module: LearningModule;
   contentType: string;
   onClose: () => void;
+  theme?: LanguageTheme;
 }
 
 const getContentTypeName = (contentType: string): string => {
@@ -21,7 +23,8 @@ const getContentTypeName = (contentType: string): string => {
   return names[contentType] || '📄 内容';
 };
 
-export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentType, onClose }) => {
+export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentType, onClose, theme }) => {
+  const cardTheme = theme || { primary: '#dc5028', bg: '#fff7ed', text: '#7c2d12' };
   const [content, setContent] = React.useState<string>('');
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -84,16 +87,24 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
     }
   };
 
+  const cardStyle = {
+    backgroundColor: cardTheme.bg,
+    borderLeft: `4px solid ${cardTheme.primary}`,
+    borderTop: `1px solid ${cardTheme.primary}33`,
+    borderRight: `1px solid ${cardTheme.primary}33`,
+    borderBottom: `1px solid ${cardTheme.primary}33`,
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="card-warm max-w-4xl w-full mx-4 max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] p-6" style={cardStyle} onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-warm-800">{getContentTypeName(contentType)}</h2>
-            <button onClick={onClose} className="text-warm-400 hover:text-warm-600 text-2xl">✕</button>
+            <h2 className="text-2xl font-bold" style={{ color: cardTheme.text }}>{getContentTypeName(contentType)}</h2>
+            <button onClick={onClose} style={{ color: cardTheme.primary }} className="text-2xl hover:opacity-70">✕</button>
           </div>
           <div className="flex items-center justify-center py-20">
-            <div className="text-warm-600 text-xl">加载中...</div>
+            <div style={{ color: cardTheme.text }} className="text-xl">加载中...</div>
           </div>
         </div>
       </div>
@@ -103,14 +114,20 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
   if (error) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="card-warm max-w-4xl w-full mx-4 max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] p-6" style={cardStyle} onClick={(e) => e.stopPropagation()}>
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-warm-800">{getContentTypeName(contentType)}</h2>
-            <button onClick={onClose} className="text-warm-400 hover:text-warm-600 text-2xl">✕</button>
+            <h2 className="text-2xl font-bold" style={{ color: cardTheme.text }}>{getContentTypeName(contentType)}</h2>
+            <button onClick={onClose} style={{ color: cardTheme.primary }} className="text-2xl hover:opacity-70">✕</button>
           </div>
           <div className="text-center py-20">
             <div className="text-red-600 text-xl mb-4">❌ {error}</div>
-            <button onClick={loadContent} className="btn-warm">重试</button>
+            <button 
+              onClick={loadContent} 
+              className="px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: cardTheme.primary }}
+            >
+              重试
+            </button>
           </div>
         </div>
       </div>
@@ -134,12 +151,13 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="card-warm max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto p-6" style={cardStyle} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center mb-6">
           {selectedExample && (
             <button
               onClick={handleBackToExamples}
-              className="mr-3 text-warm-600 hover:text-warm-800 transition-colors"
+              className="mr-3 transition-colors hover:opacity-70"
+              style={{ color: cardTheme.primary }}
               aria-label="返回示例列表"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,10 +166,10 @@ export const ContentViewer: React.FC<ContentViewerProps> = ({ module, contentTyp
             </button>
           )}
           <div className="flex-1">
-            <h2 className="text-2xl font-bold text-warm-800">{getContentTypeName(contentType)}</h2>
-            {selectedExample && <p className="text-warm-600 text-sm">{selectedExample}</p>}
+            <h2 className="text-2xl font-bold" style={{ color: cardTheme.text }}>{getContentTypeName(contentType)}</h2>
+            {selectedExample && <p style={{ color: cardTheme.primary }} className="text-sm">{selectedExample}</p>}
           </div>
-          <button onClick={handleClose} className="text-warm-400 hover:text-warm-600 text-2xl transition-colors hover:scale-110">✕</button>
+          <button onClick={handleClose} style={{ color: cardTheme.primary }} className="text-2xl transition-colors hover:opacity-70">✕</button>
         </div>
 
         {content && selectedExample ? (
