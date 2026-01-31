@@ -1,6 +1,6 @@
 # 函数演示
 
-def main():
+def main() -> None:
     print("=== Python 函数演示 ===\n")
 
     # 1. 基本函数定义

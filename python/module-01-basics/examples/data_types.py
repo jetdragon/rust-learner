@@ -1,6 +1,6 @@
 # 数据类型演示
 
-def main():
+def main() -> None:
     print("=== Python 数据类型演示 ===\n")
 
     # 1. 整数类型
