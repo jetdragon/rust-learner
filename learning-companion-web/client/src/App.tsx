@@ -274,6 +274,7 @@ function App() {
           module={currentModule}
           contentType={currentContentType}
           onClose={handleCloseContentViewer}
+          theme={theme}
         />
       )}
 
